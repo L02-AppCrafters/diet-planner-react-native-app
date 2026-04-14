@@ -51,6 +51,12 @@
         "projectId": "d55d795a-57bd-481e-a758-b41dd8bb10cd"
       }
     },
-    "owner": "appcrafters"
+    "owner": "appcrafters",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d55d795a-57bd-481e-a758-b41dd8bb10cd"
+    }
   }
 }
