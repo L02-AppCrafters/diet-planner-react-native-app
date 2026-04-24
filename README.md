@@ -1,50 +1,84 @@
-# Welcome to your Expo app 👋
+# Diet Planner React Native App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=L02-AppCrafters_diet-planner-react-native-app&metric=coverage)](https://sonarcloud.io/summary/new_code?id=L02-AppCrafters_diet-planner-react-native-app)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=L02-AppCrafters_diet-planner-react-native-app&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=L02-AppCrafters_diet-planner-react-native-app)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=L02-AppCrafters_diet-planner-react-native-app&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=L02-AppCrafters_diet-planner-react-native-app)
+[![Test and SonarCloud](https://github.com/L02-AppCrafters/diet-planner-react-native-app/actions/workflows/test.yml/badge.svg?branch=dev)](https://github.com/L02-AppCrafters/diet-planner-react-native-app/actions/workflows/test.yml)
 
-## Get started
+Mobile application hỗ trợ xây dựng thực đơn và kế hoạch ăn uống cá nhân hóa, phát triển bằng Expo + React Native.
 
-1. Install dependencies
+## Tech Stack
 
-   ```bash
+- Expo SDK 54
+- React Native 0.81
+- Expo Router (file-based routing)
+- Convex + Firebase
+- Jest + Testing Library React Native
+- SonarCloud + GitHub Actions CI
+
+## Project Structure
+
+- app: màn hình và router chính
+- components: các UI component tái sử dụng
+- context: global context (UserContext)
+- services: Firebase, AI services
+- shared: constants, prompts, colors
+- __tests__: unit tests
+
+## Prerequisites
+
+- Node.js 20+
+- npm
+- Expo CLI thông qua npx expo
+
+## How to run locally
+
+1. Cài dependencies
+
    npm install
-   ```
 
-2. Start the app
+2. Chạy ứng dụng
 
-   ```bash
    npx expo start
-   ```
 
-In the output, you'll find options to open the app in a
+3. Tùy chọn target
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+   npm run android
+   npm run ios
+   npm run web
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## How to run tests locally
 
-## Get a fresh project
+1. Cài dependencies
 
-When you're ready, run:
+   npm install
 
-```bash
-npm run reset-project
-```
+2. Chạy test kèm coverage
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+   npm test -- --coverage
 
-## Learn more
+Sau khi chạy xong, báo cáo coverage HTML nằm ở thư mục coverage/lcov-report/index.html.
 
-To learn more about developing your project with Expo, look at the following resources:
+## CI/CD and Quality Gate
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Workflow CI tại .github/workflows/test.yml sẽ tự động:
 
-## Join the community
+1. Checkout source code
+2. Setup Node.js
+3. Install dependencies
+4. Run unit tests và generate coverage
+5. Upload artifact test-report từ coverage/lcov-report
+6. Scan chất lượng mã nguồn lên SonarCloud
 
-Join our community of developers creating universal apps.
+## SonarCloud Configuration
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+File sonar-project.properties đang cấu hình:
+
+- project key: L02-AppCrafters_diet-planner-react-native-app
+- organization: l02-appcrafters
+- coverage report path: coverage/lcov.info
+
+## Notes
+
+- Nếu bạn muốn badge đúng 100% theo giao diện SonarCloud, vào SonarCloud -> Project Information -> chọn từng badge và thay link markdown ở đầu file này.
+- Nếu đổi tên workflow hoặc branch mặc định, cập nhật lại link badge GitHub Actions tương ứng.
