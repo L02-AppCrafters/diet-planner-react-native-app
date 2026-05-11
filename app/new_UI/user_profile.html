@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Nutri Planner - Body Profile</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e9edff",
+                        "secondary-fixed": "#b0f0d6",
+                        "background": "#f9f9ff",
+                        "inverse-primary": "#4edea3",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d3daef",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "on-primary-fixed-variant": "#005236",
+                        "on-primary-container": "#004b32",
+                        "tertiary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-container": "#adedd3",
+                        "surface-tint": "#006c49",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "on-error": "#ffffff",
+                        "secondary": "#2b6954",
+                        "inverse-surface": "#293040",
+                        "on-surface-variant": "#3c4a3c",
+                        "outline-variant": "#bbcbb8",
+                        "on-tertiary-fixed-variant": "#004395",
+                        "primary": "#006c49",
+                        "on-secondary-fixed": "#002117",
+                        "outline": "#6c7b6a",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-container-highest": "#dce2f7",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary-container": "#2ac48b",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-container": "#003e8a",
+                        "on-secondary-container": "#306d58",
+                        "error": "#ba1a1a",
+                        "tertiary": "#005ac2",
+                        "primary-fixed": "#6ffbbe",
+                        "on-surface": "#141b2b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#e1e8fd",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#85adff",
+                        "surface-variant": "#dce2f7",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .nutri-glass {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        h1,
+        h2,
+        h3 {
+            font-family: 'Manrope', sans-serif;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-surface min-h-screen pb-32">
+    <!-- TopAppBar -->
+    <header class="bg-emerald-50/70 dark:bg-slate-900/70 backdrop-blur-xl docked full-width top-0 z-50 sticky">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden">
+                    <img alt="User profile" class="w-full h-full object-cover"
+                        data-alt="portrait of a healthy young woman with a friendly smile, soft natural studio lighting, clean background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFK5Q50i9aiiuS_JAuWr2VPMG0Eyd9SSGdt-e4-KExI9rvY-6BUISDVsaNDV89ElD4b5Z_0AbnQ-HpyUvR7AyIujTkFN1c6Ma0iKcAv49oJGVR8gVPfarXWnBizCOX9sCOJ5bW65qFrqYIbx6oDA3rDTbPewM7xFn9twGZuTQPHO96A9yfmH9ISOsFhGtlX60jht-XAoJjTo3LWE6ZtAT1gR0wKILXydZRW4aawasnUZfLRW2DRJ57PB59nBvbYjk0PWiCklLuvwc" />
+                </div>
+                <span
+                    class="text-xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-400 font-headline">Nutri
+                    Planner</span>
+            </div>
+            <div class="flex items-center">
+                <button class="p-2 rounded-full hover:bg-emerald-100/50 transition-colors">
+                    <span class="material-symbols-outlined text-emerald-600">settings</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-4xl mx-auto px-6 pt-8">
+        <!-- Hero Section -->
+        <div class="mb-12">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight mb-4">Body Profile</h1>
+            <p class="text-on-surface-variant text-lg leading-relaxed max-w-2xl">
+                Let's calibrate your nutritional engine. Your measurements help us calculate the precise energy your
+                body needs for optimal health.
+            </p>
+        </div>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Column: Input Form -->
+            <div class="lg:col-span-7 space-y-8">
+                <div class="bg-surface-container-lowest p-8 rounded-xl border border-outline-variant/15">
+                    <div class="space-y-10">
+                        <!-- Dual Input Row -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div class="space-y-3">
+                                <label
+                                    class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Height
+                                    (cm)</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-lg p-4 text-lg focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all"
+                                    placeholder="175" type="number" />
+                            </div>
+                            <div class="space-y-3">
+                                <label
+                                    class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Weight
+                                    (kg)</label>
+                                <input
+                                    class="w-full bg-surface-container-low border-none rounded-lg p-4 text-lg focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all"
+                                    placeholder="70" type="number" />
+                            </div>
+                        </div>
+                        <!-- Age Input -->
+                        <div class="space-y-3">
+                            <label
+                                class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider">Age</label>
+                            <div class="flex items-center gap-4">
+                                <input
+                                    class="flex-grow accent-primary h-2 bg-surface-container-low rounded-lg appearance-none cursor-pointer"
+                                    max="100" min="15" type="range" value="28" />
+                                <span class="text-2xl font-bold text-primary w-12 text-right">28</span>
+                            </div>
+                        </div>
+                        <!-- Activity Level Picker -->
+                        <div class="space-y-4">
+                            <label
+                                class="text-sm font-semibold text-on-surface-variant uppercase tracking-wider block">Activity
+                                Level</label>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <button
+                                    class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-primary bg-secondary-container/30 text-on-secondary-container transition-all">
+                                    <span class="material-symbols-outlined mb-2">quiet_time_active</span>
+                                    <span class="text-xs font-bold">Sedentary</span>
+                                </button>
+                                <button
+                                    class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all">
+                                    <span class="material-symbols-outlined mb-2">directions_walk</span>
+                                    <span class="text-xs font-bold">Light</span>
+                                </button>
+                                <button
+                                    class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all">
+                                    <span class="material-symbols-outlined mb-2">fitness_center</span>
+                                    <span class="text-xs font-bold">Active</span>
+                                </button>
+                                <button
+                                    class="flex flex-col items-center justify-center p-4 rounded-xl border-2 border-transparent bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-all">
+                                    <span class="material-symbols-outlined mb-2">bolt</span>
+                                    <span class="text-xs font-bold">Elite</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action Button -->
+                <button
+                    class="w-full py-5 rounded-xl bg-gradient-to-r from-primary to-primary-container text-white font-bold text-lg shadow-lg hover:opacity-90 active:scale-95 transition-all">
+                    Update Profile Data
+                </button>
+            </div>
+            <!-- Right Column: Results/AI Insights -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- Result Card: BMI -->
+                <div class="nutri-glass p-8 rounded-xl relative overflow-hidden group">
+                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-primary rounded-full my-4 ml-1"></div>
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <p class="text-sm font-semibold text-on-surface-variant">Current BMI</p>
+                            <h3 class="text-4xl font-extrabold text-on-surface mt-1">22.9</h3>
+                        </div>
+                        <span
+                            class="px-3 py-1 bg-secondary-container text-on-secondary-container text-xs font-bold rounded-full">NORMAL</span>
+                    </div>
+                    <div class="h-2 w-full bg-surface-container rounded-full overflow-hidden mt-6 flex">
+                        <div class="h-full bg-yellow-400 w-1/4"></div>
+                        <div class="h-full bg-primary w-1/3"></div>
+                        <div class="h-full bg-error w-1/3"></div>
+                    </div>
+                    <p class="text-xs text-on-surface-variant mt-3 italic">You are within the healthy range for your
+                        height.</p>
+                </div>
+                <!-- Result Card: TDEE -->
+                <div class="bg-surface-container-low p-8 rounded-xl space-y-6">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-tertiary">insights</span>
+                        <h4 class="text-lg font-bold">Estimated TDEE</h4>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-end border-b border-outline-variant/10 pb-4">
+                            <span class="text-on-surface-variant">Daily Calories</span>
+                            <div class="text-right">
+                                <span class="text-3xl font-black text-on-surface">2,450</span>
+                                <span class="text-sm font-bold text-on-surface-variant ml-1">kcal</span>
+                            </div>
+                        </div>
+                        <p class="text-sm leading-relaxed text-on-surface-variant">
+                            Based on your activity level and body composition, this is the energy required to maintain
+                            your current weight.
+                        </p>
+                    </div>
+                </div>
+                <!-- Visual Accent -->
+                <div class="rounded-xl overflow-hidden aspect-video relative group">
+                    <img alt="Fitness Lifestyle" class="w-full h-full object-cover"
+                        data-alt="overhead shot of a clean workout space with green plants, dumbbells, and a water bottle in bright natural light"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBMZETayBsqcI0I6OO96gFYs0T9044rKqWIsS2Zi_Xh8hwRypbalmNWrVaxWynqiCaPkTiduUZWNm4tXM4nD9uLqMr2hUO96SG6hV_c3gNjfHPXYZ207Mgz3mkSv_f6PjMCA1m7HC0vWIcaSuwFkZ-FLx1ssZWqJNM-G0YzDpb4emln9oGHwYu_fH2JUx6yhaWsCG9TxrbnN0Z2Gn31Mv_TI9o5gasjO0MOX2jlnyOOLpyvlfMPewac9EPlCi06ItLv4SJFlYTPcJQ" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-on-background/60 to-transparent flex items-end p-6">
+                        <p class="text-white font-headline font-bold text-lg">Precision is the foundation of progress.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,200,83,0.08)] border-t border-emerald-500/10">
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">home</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide">Home</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-2xl px-5 py-1.5 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">add_circle</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide">Log</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">restaurant_menu</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide">Recipes</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">insights</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide">Progress</span>
+        </a>
+    </nav>
+</body>
+
+</html>

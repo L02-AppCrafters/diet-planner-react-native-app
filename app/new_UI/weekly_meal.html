@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Nutri Planner - Weekly Plan</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e9edff",
+                        "secondary-fixed": "#b0f0d6",
+                        "background": "#f9f9ff",
+                        "inverse-primary": "#4edea3",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d3daef",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "on-primary-fixed-variant": "#005236",
+                        "on-primary-container": "#004b32",
+                        "tertiary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-container": "#adedd3",
+                        "surface-tint": "#006c49",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "on-error": "#ffffff",
+                        "secondary": "#2b6954",
+                        "inverse-surface": "#293040",
+                        "on-surface-variant": "#3c4a3c",
+                        "outline-variant": "#bbcbb8",
+                        "on-tertiary-fixed-variant": "#004395",
+                        "primary": "#006c49",
+                        "on-secondary-fixed": "#002117",
+                        "outline": "#6c7b6a",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-container-highest": "#dce2f7",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary-container": "#2ac48b",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-container": "#003e8a",
+                        "on-secondary-container": "#306d58",
+                        "error": "#ba1a1a",
+                        "tertiary": "#005ac2",
+                        "primary-fixed": "#6ffbbe",
+                        "on-surface": "#141b2b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#e1e8fd",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#85adff",
+                        "surface-variant": "#dce2f7",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background text-on-background font-body selection:bg-primary-container selection:text-on-primary-container">
+    <!-- TopAppBar -->
+    <header
+        class="bg-emerald-50/70 dark:bg-slate-900/70 backdrop-blur-xl docked full-width top-0 z-50 sticky transition-all duration-300">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div
+                    class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border-2 border-primary/20">
+                    <img alt="User Avatar"
+                        data-alt="close-up portrait of a cheerful person with short hair against a soft green studio background, professional lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDogPun9_RFqj6SBHtmdFCCF43wiEcr53E_DAwlDqQ37G4UJ5XXDocMkNLxffbuNLMXT_Sx1RgF2bPll92kw_U3LRUqGUgGtur9Qi1MtxZQcUQJF3ZqGpcYCh_t0f479SF6gL6iemnUZk7e71CNugKjTrHvjGNh3AZEfdwrYc8sPqSlgt2QFEoKdEtqY3BN8WLazCIJkQy1ug1fL5Pu3wh1g9m5ve8NYZNQ1Ax2NVL7qE-zKmJlOpH7UYe07zAiwgesi48VXxa9ewA" />
+                </div>
+                <h1 class="text-xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-400 font-headline">
+                    Weekly Plan</h1>
+            </div>
+            <button
+                class="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-colors active:scale-95 duration-150">
+                <span class="material-symbols-outlined text-emerald-600">settings</span>
+            </button>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto px-6 pb-32 pt-4">
+        <!-- Summary Stats Section -->
+        <section class="mb-10 flex flex-col md:flex-row gap-6">
+            <div
+                class="flex-1 bg-surface-container-lowest p-8 rounded-xl border border-emerald-500/10 shadow-[0_20px_40px_rgba(20,27,43,0.04)]">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <p class="text-on-surface-variant text-sm font-semibold mb-1">Energy Budget</p>
+                        <h2 class="text-4xl font-extrabold font-headline text-emerald-700">1,420 <span
+                                class="text-lg font-medium text-slate-400">/ 2,100 kcal</span></h2>
+                    </div>
+                    <div class="text-right">
+                        <span class="text-primary font-bold text-sm bg-primary-container/20 px-3 py-1 rounded-full">67%
+                            Planned</span>
+                    </div>
+                </div>
+                <div class="w-full h-3 bg-surface-container-low rounded-full overflow-hidden">
+                    <div class="h-full bg-gradient-to-r from-primary to-primary-container" style="width: 67.6%"></div>
+                </div>
+            </div>
+            <div
+                class="w-full md:w-1/3 bg-emerald-700 text-on-primary p-8 rounded-xl shadow-lg relative overflow-hidden">
+                <div class="relative z-10">
+                    <h3 class="text-lg font-bold font-headline mb-2">AI Optimization</h3>
+                    <p class="text-emerald-50/80 text-sm leading-relaxed">Your plan is low in Fiber today. We suggest
+                        adding Chia Seeds to your afternoon snack.</p>
+                </div>
+                <div class="absolute -bottom-4 -right-4 opacity-10">
+                    <span class="material-symbols-outlined text-8xl"
+                        style="font-variation-settings: 'FILL' 1;">insights</span>
+                </div>
+            </div>
+        </section>
+        <!-- Horizontal Calendar Scroller -->
+        <section class="mb-8">
+            <div class="flex overflow-x-auto gap-4 py-2 px-1 hide-scrollbar">
+                <button
+                    class="flex-shrink-0 w-20 h-28 flex flex-col items-center justify-center rounded-xl bg-surface-container-lowest text-slate-500 border border-transparent transition-all hover:bg-emerald-50">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Mon</span>
+                    <span class="text-xl font-bold font-headline">12</span>
+                </button>
+                <button
+                    class="flex-shrink-0 w-20 h-28 flex flex-col items-center justify-center rounded-xl bg-surface-container-lowest text-slate-500 border border-transparent transition-all hover:bg-emerald-50">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Tue</span>
+                    <span class="text-xl font-bold font-headline">13</span>
+                </button>
+                <button
+                    class="flex-shrink-0 w-24 h-32 flex flex-col items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-container text-white shadow-xl scale-110 z-10">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Wed</span>
+                    <span class="text-2xl font-extrabold font-headline">14</span>
+                    <div class="w-1.5 h-1.5 bg-white rounded-full mt-2"></div>
+                </button>
+                <button
+                    class="flex-shrink-0 w-20 h-28 flex flex-col items-center justify-center rounded-xl bg-surface-container-lowest text-slate-500 border border-transparent transition-all hover:bg-emerald-50">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Thu</span>
+                    <span class="text-xl font-bold font-headline">15</span>
+                </button>
+                <button
+                    class="flex-shrink-0 w-20 h-28 flex flex-col items-center justify-center rounded-xl bg-surface-container-lowest text-slate-500 border border-transparent transition-all hover:bg-emerald-50">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Fri</span>
+                    <span class="text-xl font-bold font-headline">16</span>
+                </button>
+                <button
+                    class="flex-shrink-0 w-20 h-28 flex flex-col items-center justify-center rounded-xl bg-surface-container-lowest text-slate-500 border border-transparent transition-all hover:bg-emerald-50">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Sat</span>
+                    <span class="text-xl font-bold font-headline">17</span>
+                </button>
+                <button
+                    class="flex-shrink-0 w-20 h-28 flex flex-col items-center justify-center rounded-xl bg-surface-container-lowest text-slate-500 border border-transparent transition-all hover:bg-emerald-50">
+                    <span class="text-xs font-semibold uppercase tracking-widest mb-2 font-label">Sun</span>
+                    <span class="text-xl font-bold font-headline">18</span>
+                </button>
+            </div>
+        </section>
+        <!-- Meal Slots - Bento/Editorial Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Breakfast Slot -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 border border-emerald-500/5 group hover:border-primary/20 transition-all duration-300 shadow-sm">
+                <div class="flex justify-between items-center mb-5">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-lg">wb_sunny</span>
+                        </div>
+                        <h3 class="font-bold font-headline text-lg">Breakfast</h3>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-lg">08:30
+                        AM</span>
+                </div>
+                <div class="relative rounded-lg overflow-hidden h-40 mb-4">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        data-alt="A bowl of vibrant green avocado toast with poached eggs, chili flakes, and fresh sprouts on a ceramic plate"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuA0fqbF6z2dwKK3MoPh81BX_xFRt7GQQnbffiuOQqREMcZUWppJt1A-M38JIGVs1C7HsRhyM89LE0zS0996sBxGTr1pRvhL9UVISjH6MrioBJv2toKmGZwKBhrvGs7ILUlFR-yDaSAXQJnfAIvVEnijEVl_-dsSQS_PitEGVsn8BhnJ0uGvfMX-lI1_OEO2yuQfJaeawuZTd2_5mdWuNfNVoCmYhqwhbh7Ns1-CNkeGF0uYSMw1NEKyLoOHPO_5LLV2PFVXPcpC9-M" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
+                        <h4 class="text-white font-bold">Avocado &amp; Poached Egg</h4>
+                        <p class="text-emerald-100 text-xs">420 kcal • 18g Protein</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Lunch Slot -->
+            <div
+                class="bg-surface-container-lowest rounded-xl p-6 border border-emerald-500/5 group hover:border-primary/20 transition-all duration-300 shadow-sm">
+                <div class="flex justify-between items-center mb-5">
+                    <div class="flex items-center gap-3">
+                        <div
+                            class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-lg">restaurant</span>
+                        </div>
+                        <h3 class="font-bold font-headline text-lg">Lunch</h3>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-lg">12:45
+                        PM</span>
+                </div>
+                <div class="relative rounded-lg overflow-hidden h-40 mb-4">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        data-alt="Mediterranean salad bowl with roasted chickpeas, cucumber, feta cheese, and grilled chicken breast, natural daylight"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiNXtbQHjXvl21BA89ly626E-DpfGBfMQQo1U9Lm5gyte7nI43m3PsL4WtaE_mC6aGxQj0kHj6VW2-_GsYJekvca1kQbErRGBOj1DSahkKj6lCsgVKRxs9R0e8WhXlCZQjy25O-1cOJnVx7AayBWDNQnIYQ2uOsAGqXnSIpk2QvhTCha2VUky0OCnWxUXalWwNiqQ0DJEh1i2SdM2tPZdL69oHLEqfc81JUfJCk8U4TmXiI_3ubQWEj0dkWJpb_2nwD3pdGcK85t4" />
+                    <div
+                        class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-4">
+                        <h4 class="text-white font-bold">Mediterranean Power Bowl</h4>
+                        <p class="text-emerald-100 text-xs">650 kcal • 32g Protein</p>
+                    </div>
+                </div>
+            </div>
+            <!-- Snack Slot (Empty/Add State) -->
+            <div
+                class="bg-surface-container-low border-2 border-dashed border-outline-variant/30 rounded-xl p-6 flex flex-col items-center justify-center min-h-[260px] group cursor-pointer hover:bg-emerald-50/50 transition-all">
+                <div class="flex flex-col items-center text-center">
+                    <div
+                        class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform shadow-sm">
+                        <span class="material-symbols-outlined">add</span>
+                    </div>
+                    <h3 class="font-bold font-headline text-slate-600">Add Snack</h3>
+                    <p class="text-xs text-slate-400 mt-1">Keep your metabolism active</p>
+                </div>
+            </div>
+            <!-- Dinner Slot -->
+            <div
+                class="lg:col-span-2 bg-surface-container-lowest rounded-xl p-6 border border-emerald-500/5 group hover:border-primary/20 transition-all duration-300 shadow-sm flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-1/2 relative rounded-lg overflow-hidden h-48 md:h-auto">
+                    <img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        data-alt="Grilled salmon fillet with lemon slices and asparagus on a dark plate, moody atmospheric lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-ll_07iMlDytCufwcpSdM-mYke4nkD9a5rsq4GMLh749fCJbWiBQsl_wMotRMJD109XWFLxIT4FVyA2eG7bYOO3u_UkhtX0ZhfzgoTUoWXj6ajTlfJ5O48vN17PjVaCQCsFEZUegsm-CkzG-F8ozYcDwxk_w-coJRuCe01FRmoJJIZfl3m80BlDmHW78iCm8pHWUnneuFSnMqS5MsG1tl-zHEhwDagOKdNaOJ8eO_xkwK4QXjA7eNraIQ_3-iAKakJX_OiVGkjrk" />
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-lg">nights_stay</span>
+                            </div>
+                            <h3 class="font-bold font-headline text-lg">Dinner</h3>
+                        </div>
+                        <span
+                            class="text-xs font-bold text-on-surface-variant bg-surface-container-low px-3 py-1 rounded-lg">07:15
+                            PM</span>
+                    </div>
+                    <h4 class="text-xl font-bold font-headline text-on-surface mb-2">Atlantic Salmon &amp; Asparagus
+                    </h4>
+                    <p class="text-sm text-on-surface-variant mb-6 leading-relaxed">High in Omega-3 fatty acids. Served
+                        with a side of zesty quinoa and roasted almonds.</p>
+                    <div class="mt-auto flex gap-3">
+                        <div class="bg-surface-container-low px-4 py-2 rounded-lg flex flex-col">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Cals</span>
+                            <span class="font-bold text-primary">520</span>
+                        </div>
+                        <div class="bg-surface-container-low px-4 py-2 rounded-lg flex flex-col">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Protein</span>
+                            <span class="font-bold text-primary">38g</span>
+                        </div>
+                        <div class="bg-surface-container-low px-4 py-2 rounded-lg flex flex-col">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Fat</span>
+                            <span class="font-bold text-primary">24g</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Hydration (Secondary Track) -->
+            <div class="bg-tertiary-container/10 rounded-xl p-6 border border-tertiary/10 flex flex-col">
+                <div class="flex items-center gap-3 mb-6">
+                    <div class="w-8 h-8 rounded-lg bg-tertiary/20 text-tertiary flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">water_drop</span>
+                    </div>
+                    <h3 class="font-bold font-headline text-lg">Hydration</h3>
+                </div>
+                <div class="flex-1 flex flex-col justify-center items-center text-center">
+                    <p class="text-3xl font-black font-headline text-tertiary mb-1">1.8 <span
+                            class="text-lg font-medium text-slate-400">/ 3.0L</span></p>
+                    <div class="flex gap-2 mt-4">
+                        <div class="w-4 h-8 bg-tertiary rounded-full"></div>
+                        <div class="w-4 h-8 bg-tertiary rounded-full"></div>
+                        <div class="w-4 h-8 bg-tertiary rounded-full"></div>
+                        <div class="w-4 h-8 bg-tertiary/20 rounded-full"></div>
+                        <div class="w-4 h-8 bg-tertiary/20 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- BottomNavBar -->
+    <nav
+        class="fixed bottom-0 left-0 w-full z-50 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl rounded-t-3xl border-t border-emerald-500/10 shadow-[0_-10px_40px_rgba(0,200,83,0.08)]">
+        <div class="flex justify-around items-center px-4 pb-6 pt-3 max-w-7xl mx-auto">
+            <button
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 dark:hover:text-emerald-300 group">
+                <span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform">home</span>
+                <span class="text-[11px] font-semibold font-label tracking-wide">Home</span>
+            </button>
+            <button
+                class="flex flex-col items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-2xl px-5 py-1.5 tap-highlight-none transition-all duration-300 ease-out">
+                <span class="material-symbols-outlined mb-1"
+                    style="font-variation-settings: 'FILL' 1;">add_circle</span>
+                <span class="text-[11px] font-semibold font-label tracking-wide">Log</span>
+            </button>
+            <button
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 dark:hover:text-emerald-300 group">
+                <span
+                    class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform">restaurant_menu</span>
+                <span class="text-[11px] font-semibold font-label tracking-wide">Recipes</span>
+            </button>
+            <button
+                class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 dark:hover:text-emerald-300 group">
+                <span class="material-symbols-outlined mb-1 group-active:scale-95 transition-transform">insights</span>
+                <span class="text-[11px] font-semibold font-label tracking-wide">Progress</span>
+            </button>
+        </div>
+    </nav>
+</body>
+
+</html>

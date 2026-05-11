@@ -1,9 +1,16 @@
 export default {
-  PRIMARY: '#8837FF',
-  SECONDARY: '#FBF5FF',
+  PRIMARY: '#006c49',
+  PRIMARY_CONTAINER: '#2ac48b',
+  SECONDARY: '#2b6954',
+  BACKGROUND: '#f9f9ff',
+  SURFACE: '#f9f9ff',
+  SURFACE_CONTAINER_LOWEST: '#ffffff',
+  ON_SURFACE: '#141b2b',
+  ON_SURFACE_VARIANT: '#3c4a3c',
   WHITE: '#FFFFFF',
   GRAY: '#808080',
   BLUE: '#4287F5',
   GREEN: '#009E10',
-  PINK: '#F542B3'
+  PINK: '#F542B3',
+  ERROR: '#ba1a1a',
 }

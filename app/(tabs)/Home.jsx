@@ -1,7 +1,8 @@
-import { View, Text } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import React, { useContext, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { UserContext } from './../../context/UserContext';
+import Colors from '../../shared/Colors';
 
 import HomeHeader from '../../components/HomeHeader';
 import TodayProgress from '../../components/TodayProgress';
@@ -19,15 +20,19 @@ export default function Home() {
   }, [user]);
 
   return (
-    <View
-      style={{
-        padding: 20
-      }}
-    >
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <HomeHeader />
       <TodayProgress />
       <GenerateRecipeCard />
       <TodaysMealPlan />
-    </View>
+    </ScrollView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    backgroundColor: Colors.BACKGROUND,
+  }
+});

@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e9edff",
+                        "secondary-fixed": "#b0f0d6",
+                        "background": "#f9f9ff",
+                        "inverse-primary": "#4edea3",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d3daef",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "on-primary-fixed-variant": "#005236",
+                        "on-primary-container": "#004b32",
+                        "tertiary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-container": "#adedd3",
+                        "surface-tint": "#006c49",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "on-error": "#ffffff",
+                        "secondary": "#2b6954",
+                        "inverse-surface": "#293040",
+                        "on-surface-variant": "#3c4a3c",
+                        "outline-variant": "#bbcbb8",
+                        "on-tertiary-fixed-variant": "#004395",
+                        "primary": "#006c49",
+                        "on-secondary-fixed": "#002117",
+                        "outline": "#6c7b6a",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-container-highest": "#dce2f7",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary-container": "#2ac48b",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-container": "#003e8a",
+                        "on-secondary-container": "#306d58",
+                        "error": "#ba1a1a",
+                        "tertiary": "#005ac2",
+                        "primary-fixed": "#6ffbbe",
+                        "on-surface": "#141b2b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#e1e8fd",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#85adff",
+                        "surface-variant": "#dce2f7",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .chart-gradient-line {
+            background: linear-gradient(180deg, rgba(42, 196, 139, 0.2) 0%, rgba(42, 196, 139, 0) 100%);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background font-body text-on-background selection:bg-primary-container selection:text-on-primary-container">
+    <!-- TopAppBar -->
+    <nav class="bg-emerald-50/70 dark:bg-slate-900/70 backdrop-blur-xl docked full-width top-0 z-50 sticky">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-highest">
+                    <img alt="User profile photo" class="w-full h-full object-cover"
+                        data-alt="close-up portrait of a healthy energetic woman smiling with natural lighting and soft blurred garden background"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDPqIhgUPR3jd0O66Y1lBWT-DHmKF0Zug9ymgNqJYX5Own32J-LNbZuXE4Zo0Bq8fQw92Fmix-zcsSPn_7rf-UatKwcF0lyL01Z0LFP8etEfTynLskQakMAU1gaDBPnfb6ONqLrEnF1ppllkNhdGx3dplOZrYzxA3wNQbRb104AE_6UZkPer4YaZnlMnskFxVV4VaI0kobRG1ygYZ7ZnzlBbGCdhX74vef8a6Inyxx_u8I3JBczp29gbVyUZQzzPIzeT7avUVcrqYQ" />
+                </div>
+                <h1 class="text-xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-400 font-manrope">
+                    Analytics</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button
+                    class="p-2 rounded-full hover:bg-emerald-100/50 dark:hover:bg-emerald-900/30 transition-colors active:scale-95 duration-150">
+                    <span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400"
+                        data-icon="settings">settings</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+    <main class="max-w-7xl mx-auto px-6 pt-4 pb-32">
+        <!-- Dashboard Header -->
+        <header class="mb-8">
+            <h2 class="text-3xl font-bold font-headline text-on-background tracking-tight">Your Performance</h2>
+            <p class="text-on-surface-variant mt-1">Consistency is the secret to lasting results.</p>
+        </header>
+        <!-- Bento Grid Layout -->
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-6">
+            <!-- Weight Over Time - Large Featured Chart -->
+            <section
+                class="md:col-span-8 bg-surface-container-lowest rounded-xl p-6 border border-emerald-500/5 overflow-hidden">
+                <div class="flex justify-between items-start mb-6">
+                    <div>
+                        <h3 class="text-lg font-bold font-headline">Weight Over Time</h3>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-2xl font-extrabold text-primary">74.2 kg</span>
+                            <span
+                                class="text-xs font-semibold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[14px]"
+                                    data-icon="arrow_downward">arrow_downward</span>
+                                0.8kg
+                            </span>
+                        </div>
+                    </div>
+                    <div class="flex bg-surface-container-low rounded-lg p-1">
+                        <button
+                            class="px-3 py-1 text-xs font-semibold rounded-md bg-surface-container-lowest text-primary shadow-sm">Week</button>
+                        <button
+                            class="px-3 py-1 text-xs font-semibold text-on-surface-variant hover:text-primary transition-colors">Month</button>
+                    </div>
+                </div>
+                <!-- Custom Line Chart Visualization -->
+                <div class="relative h-64 w-full flex items-end gap-2 group">
+                    <div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                        <div class="border-t border-outline-variant/10 w-full h-0"></div>
+                        <div class="border-t border-outline-variant/10 w-full h-0"></div>
+                        <div class="border-t border-primary/20 w-full h-0 border-dashed relative">
+                            <span
+                                class="absolute -top-3 right-0 text-[10px] font-bold text-primary bg-background px-1">TARGET
+                                70KG</span>
+                        </div>
+                        <div class="border-t border-outline-variant/10 w-full h-0"></div>
+                    </div>
+                    <svg class="w-full h-full preserve-3d" preserveaspectratio="none" viewbox="0 0 100 40">
+                        <path d="M0,35 Q10,32 20,28 T40,25 T60,18 T80,12 T100,15" fill="none"
+                            stroke="url(#line-gradient)" stroke-width="2" vector-effect="non-scaling-stroke"></path>
+                        <path d="M0,35 Q10,32 20,28 T40,25 T60,18 T80,12 T100,15 V40 H0 Z" fill="url(#area-gradient)"
+                            vector-effect="non-scaling-stroke"></path>
+                        <defs>
+                            <lineargradient id="line-gradient" x1="0" x2="1" y1="0" y2="0">
+                                <stop offset="0%" stop-color="#006c49"></stop>
+                                <stop offset="100%" stop-color="#2ac48b"></stop>
+                            </lineargradient>
+                            <lineargradient id="area-gradient" x1="0" x2="0" y1="0" y2="1">
+                                <stop offset="0%" stop-color="rgba(42, 196, 139, 0.3)"></stop>
+                                <stop offset="100%" stop-color="rgba(42, 196, 139, 0)"></stop>
+                            </lineargradient>
+                        </defs>
+                        <circle cx="20" cy="28" fill="#006c49" r="1.5"></circle>
+                        <circle cx="40" cy="25" fill="#006c49" r="1.5"></circle>
+                        <circle cx="60" cy="18" fill="#006c49" r="1.5"></circle>
+                        <circle cx="80" cy="12" fill="#006c49" r="2.5" stroke="white" stroke-width="0.5"></circle>
+                    </svg>
+                    <div
+                        class="absolute bottom-0 w-full flex justify-between px-2 text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">
+                        <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Streak Card -->
+            <section
+                class="md:col-span-4 glass-card rounded-xl p-6 relative overflow-hidden flex flex-col justify-between border-l-4 border-primary">
+                <div>
+                    <h3 class="text-sm font-semibold text-on-surface-variant uppercase tracking-widest mb-4">Activity
+                        Streak</h3>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-6xl font-black font-headline text-primary tracking-tighter">5</span>
+                        <span class="text-xl font-bold text-on-surface">Days</span>
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <div class="flex gap-1.5 mb-2">
+                        <div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+                        <div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+                        <div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+                        <div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+                        <div class="h-1.5 flex-1 bg-primary rounded-full"></div>
+                        <div class="h-1.5 flex-1 bg-surface-container-highest rounded-full"></div>
+                        <div class="h-1.5 flex-1 bg-surface-container-highest rounded-full"></div>
+                    </div>
+                    <p class="text-xs text-on-surface-variant">2 days left to hit your weekly goal!</p>
+                </div>
+                <span
+                    class="material-symbols-outlined absolute -right-4 -bottom-4 text-primary/10 text-9xl pointer-events-none"
+                    data-icon="local_fire_department" data-weight="fill"
+                    style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+            </section>
+            <!-- Weekly Calorie Average - Bar Chart -->
+            <section class="md:col-span-7 bg-surface-container-lowest rounded-xl p-6 border border-emerald-500/5">
+                <div class="flex justify-between items-center mb-8">
+                    <h3 class="text-lg font-bold font-headline">Weekly Calorie Average</h3>
+                    <div class="text-right">
+                        <span class="block text-xl font-bold text-tertiary">2,140</span>
+                        <span class="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider">Avg
+                            kcal/day</span>
+                    </div>
+                </div>
+                <div class="flex items-end justify-between h-40 gap-4">
+                    <!-- Bar 1 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg relative group overflow-hidden"
+                            style="height: 80%;">
+                            <div
+                                class="absolute bottom-0 w-full bg-primary-container h-full transition-all duration-500 group-hover:brightness-110">
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">M</span>
+                    </div>
+                    <!-- Bar 2 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg relative group overflow-hidden"
+                            style="height: 95%;">
+                            <div
+                                class="absolute bottom-0 w-full bg-primary h-full transition-all duration-500 group-hover:brightness-110">
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">T</span>
+                    </div>
+                    <!-- Bar 3 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg relative group overflow-hidden"
+                            style="height: 65%;">
+                            <div
+                                class="absolute bottom-0 w-full bg-primary-container h-full transition-all duration-500 group-hover:brightness-110">
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">W</span>
+                    </div>
+                    <!-- Bar 4 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg relative group overflow-hidden"
+                            style="height: 100%;">
+                            <div
+                                class="absolute bottom-0 w-full bg-error h-full opacity-60 transition-all duration-500">
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">T</span>
+                    </div>
+                    <!-- Bar 5 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg relative group overflow-hidden"
+                            style="height: 75%;">
+                            <div
+                                class="absolute bottom-0 w-full bg-primary-container h-full transition-all duration-500">
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">F</span>
+                    </div>
+                    <!-- Bar 6 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg" style="height: 0%;"></div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">S</span>
+                    </div>
+                    <!-- Bar 7 -->
+                    <div class="flex-1 flex flex-col items-center gap-3">
+                        <div class="w-full bg-surface-container-low rounded-t-lg" style="height: 0%;"></div>
+                        <span class="text-[10px] font-bold text-on-surface-variant">S</span>
+                    </div>
+                </div>
+            </section>
+            <!-- Body Fat % Trend -->
+            <section
+                class="md:col-span-5 bg-surface-container-lowest rounded-xl p-6 border border-emerald-500/5 flex flex-col justify-between">
+                <div class="flex justify-between items-start">
+                    <h3 class="text-lg font-bold font-headline">Body Fat %</h3>
+                    <span class="material-symbols-outlined text-tertiary"
+                        data-icon="monitor_weight">monitor_weight</span>
+                </div>
+                <div class="mt-4 flex items-center justify-between">
+                    <div>
+                        <span class="text-4xl font-black font-headline text-on-background tracking-tighter">22.4%</span>
+                        <div class="flex items-center gap-1 text-primary mt-1">
+                            <span class="material-symbols-outlined text-[16px]"
+                                data-icon="trending_down">trending_down</span>
+                            <span class="text-sm font-semibold">1.2% this month</span>
+                        </div>
+                    </div>
+                    <div class="relative w-24 h-24">
+                        <svg class="w-full h-full transform -rotate-90" viewbox="0 0 36 36">
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none" stroke="#f1f3ff" stroke-width="3"></path>
+                            <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                fill="none" stroke="#005ac2" stroke-dasharray="22.4, 100" stroke-linecap="round"
+                                stroke-width="3"></path>
+                        </svg>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span class="text-[10px] font-bold text-tertiary uppercase">Healthy</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bg-surface-container-low rounded-lg p-3 mt-4">
+                    <p class="text-xs leading-relaxed text-on-surface-variant italic">"Your muscle mass is increasing
+                        alongside your fat loss. Keep up the high-protein intake."</p>
+                </div>
+            </section>
+        </div>
+        <!-- Nutrient Breakdown List -->
+        <section class="mt-10 mb-6">
+            <h3 class="text-xl font-bold font-headline mb-4">Nutrient Adherence</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <!-- Protein -->
+                <div class="bg-surface-container-lowest p-4 rounded-xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-emerald-100 flex items-center justify-center text-primary">
+                        <span class="material-symbols-outlined" data-icon="egg" data-weight="fill"
+                            style="font-variation-settings: 'FILL' 1;">egg</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-bold">Protein</span>
+                            <span class="text-xs font-semibold">92%</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+                            <div class="h-full bg-primary" style="width: 92%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Carbs -->
+                <div class="bg-surface-container-lowest p-4 rounded-xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700">
+                        <span class="material-symbols-outlined" data-icon="bakery_dining" data-weight="fill"
+                            style="font-variation-settings: 'FILL' 1;">bakery_dining</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-bold">Carbs</span>
+                            <span class="text-xs font-semibold">78%</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+                            <div class="h-full bg-amber-500" style="width: 78%;"></div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Fats -->
+                <div class="bg-surface-container-lowest p-4 rounded-xl flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+                        <span class="material-symbols-outlined" data-icon="opacity" data-weight="fill"
+                            style="font-variation-settings: 'FILL' 1;">opacity</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-sm font-bold">Fats</span>
+                            <span class="text-xs font-semibold">105%</span>
+                        </div>
+                        <div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+                            <div class="h-full bg-blue-500" style="width: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+    <!-- BottomNavBar -->
+    <footer class="fixed bottom-0 left-0 w-full z-50">
+        <div
+            class="bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl rounded-t-3xl shadow-[0_-10px_40px_rgba(0,200,83,0.08)] border-t border-emerald-500/10">
+            <div class="flex justify-around items-center px-4 pb-6 pt-3">
+                <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 dark:hover:text-emerald-300 transition-all duration-300 ease-out"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="home">home</span>
+                    <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Home</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 dark:hover:text-emerald-300 transition-all duration-300 ease-out"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                    <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Log</span>
+                </a>
+                <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 dark:hover:text-emerald-300 transition-all duration-300 ease-out"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="restaurant_menu">restaurant_menu</span>
+                    <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Recipes</span>
+                </a>
+                <a class="flex flex-col items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-2xl px-5 py-1.5 transition-all duration-300 ease-out"
+                    href="#">
+                    <span class="material-symbols-outlined" data-icon="insights" data-weight="fill"
+                        style="font-variation-settings: 'FILL' 1;">insights</span>
+                    <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Progress</span>
+                </a>
+            </div>
+        </div>
+    </footer>
+</body>
+
+</html>

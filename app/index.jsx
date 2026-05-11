@@ -96,7 +96,10 @@ export default function Index() {
       }}>
         <Button
           title={'Get Started'}
-          onPress={() => router.push('/auth/SignIn')}
+          onPress={() => {
+            setUser({ name: 'Guest User', email: 'guest@example.com', credit: 10 });
+            router.push('/(tabs)/Home');
+          }}
           icon={<Ionicons name="arrow-forward" size={24} color="white" />}
         />
       </View>

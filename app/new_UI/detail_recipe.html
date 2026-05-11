@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e9edff",
+                        "secondary-fixed": "#b0f0d6",
+                        "background": "#f9f9ff",
+                        "inverse-primary": "#4edea3",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d3daef",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "on-primary-fixed-variant": "#005236",
+                        "on-primary-container": "#004b32",
+                        "tertiary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-container": "#adedd3",
+                        "surface-tint": "#006c49",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "on-error": "#ffffff",
+                        "secondary": "#2b6954",
+                        "inverse-surface": "#293040",
+                        "on-surface-variant": "#3c4a3c",
+                        "outline-variant": "#bbcbb8",
+                        "on-tertiary-fixed-variant": "#004395",
+                        "primary": "#006c49",
+                        "on-secondary-fixed": "#002117",
+                        "outline": "#6c7b6a",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-container-highest": "#dce2f7",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary-container": "#2ac48b",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-container": "#003e8a",
+                        "on-secondary-container": "#306d58",
+                        "error": "#ba1a1a",
+                        "tertiary": "#005ac2",
+                        "primary-fixed": "#6ffbbe",
+                        "on-surface": "#141b2b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#e1e8fd",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#85adff",
+                        "surface-variant": "#dce2f7",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "3xl": "3rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .nutri-glass {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-left: 2px solid #006c49;
+        }
+
+        .recipe-hero-gradient {
+            background: linear-gradient(to bottom, rgba(20, 27, 43, 0) 0%, rgba(20, 27, 43, 0.8) 100%);
+        }
+
+        .primary-cta-gradient {
+            background: linear-gradient(135deg, #006c49 0%, #2ac48b 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background text-on-background font-body antialiased">
+    <!-- TopAppBar -->
+    <header class="bg-emerald-50/70 dark:bg-slate-900/70 backdrop-blur-xl docked full-width top-0 z-50 sticky">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <button class="hover:bg-emerald-100/50 transition-colors p-2 rounded-full active:scale-95 duration-150">
+                    <span class="material-symbols-outlined text-emerald-700">arrow_back</span>
+                </button>
+                <h1 class="text-xl font-extrabold tracking-tight text-emerald-700 dark:text-emerald-400 font-headline">
+                    Phở Gà</h1>
+            </div>
+            <div class="flex items-center gap-2">
+                <button class="hover:bg-emerald-100/50 transition-colors p-2 rounded-full active:scale-95 duration-150">
+                    <span class="material-symbols-outlined text-emerald-700">bookmark</span>
+                </button>
+                <button class="hover:bg-emerald-100/50 transition-colors p-2 rounded-full active:scale-95 duration-150">
+                    <span class="material-symbols-outlined text-emerald-700">share</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto pb-32">
+        <!-- Hero Section -->
+        <section class="relative h-[397px] md:h-[530px] overflow-hidden md:rounded-b-[3rem]">
+            <img alt="Phở Gà" class="w-full h-full object-cover"
+                data-alt="Close-up of a steaming bowl of Vietnamese chicken Pho with fresh herbs, lime slices, and red chili in a rustic ceramic bowl with soft natural lighting"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEr3hRQAzV0S2ijzvbXMBOJVvhOOkoJJa-OCPVpRKgdWHP5UxJwz-8Lq2lx6bq-EGwYY2V4ZxxznhOWOnQQ_oRdq3zvDj3MoCeiEDSs02grB11lT3b4UPksANBHo3G6SaV5NSjcDoyHDl9mv4iP9UnhDH3wJlhKTfp6e12Z4ZUaIGNQ3z_rl_kxfqneCT0iZ5hPNwCMCEagYXdpyXPZWs-tf77oiPHaXlBf6pDWMtbXm8mx0JeqzcPvjar5_eLWti3kN4AdI5XBTY" />
+            <div class="absolute inset-0 recipe-hero-gradient"></div>
+            <div
+                class="absolute bottom-0 left-0 right-0 p-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <span
+                        class="inline-block px-3 py-1 bg-primary-container text-on-primary-container text-[11px] font-bold rounded-full mb-3 uppercase tracking-widest">High
+                        Protein</span>
+                    <h2
+                        class="text-white text-4xl md:text-6xl font-headline font-extrabold tracking-tighter leading-tight">
+                        Phở Gà</h2>
+                    <p class="text-white/80 text-lg font-medium max-w-xl mt-2">Traditional Vietnamese Chicken Noodle
+                        Soup. A restorative, aromatic clear broth infused with charred ginger and spices.</p>
+                </div>
+                <div class="flex gap-4">
+                    <div class="nutri-glass p-4 rounded-xl flex flex-col items-center min-w-[80px]">
+                        <span class="material-symbols-outlined text-primary mb-1">local_fire_department</span>
+                        <span class="text-on-surface font-bold text-lg">450</span>
+                        <span class="text-on-surface-variant text-[10px] uppercase font-bold">Kcal</span>
+                    </div>
+                    <div class="nutri-glass p-4 rounded-xl flex flex-col items-center min-w-[80px]">
+                        <span class="material-symbols-outlined text-primary mb-1">schedule</span>
+                        <span class="text-on-surface font-bold text-lg">45</span>
+                        <span class="text-on-surface-variant text-[10px] uppercase font-bold">Mins</span>
+                    </div>
+                    <div class="nutri-glass p-4 rounded-xl flex flex-col items-center min-w-[80px]">
+                        <span class="material-symbols-outlined text-primary mb-1">restaurant</span>
+                        <span class="text-on-surface font-bold text-lg">2</span>
+                        <span class="text-on-surface-variant text-[10px] uppercase font-bold">Servings</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <div class="px-6 py-12 grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <!-- Left Column: Ingredients -->
+            <div class="lg:col-span-4 space-y-8">
+                <div class="flex justify-between items-center">
+                    <h3 class="text-2xl font-headline font-bold text-on-surface">Ingredients</h3>
+                    <button class="text-primary font-bold text-sm hover:underline">Add all to list</button>
+                </div>
+                <div class="space-y-4">
+                    <!-- Ingredient Items -->
+                    <label
+                        class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-xl border-l-4 border-transparent hover:border-primary transition-all cursor-pointer group">
+                        <input
+                            class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-all"
+                            type="checkbox" />
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Whole Chicken</span>
+                            <span class="text-xs text-on-surface-variant">1.5 kg, skin-on</span>
+                        </div>
+                    </label>
+                    <label
+                        class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-xl border-l-4 border-transparent hover:border-primary transition-all cursor-pointer group">
+                        <input
+                            class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-all"
+                            type="checkbox" />
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Rice Noodles (Bánh Phở)</span>
+                            <span class="text-xs text-on-surface-variant">400g, dried or fresh</span>
+                        </div>
+                    </label>
+                    <label
+                        class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-xl border-l-4 border-transparent hover:border-primary transition-all cursor-pointer group">
+                        <input
+                            class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-all"
+                            type="checkbox" />
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Ginger &amp; Shallots</span>
+                            <span class="text-xs text-on-surface-variant">Charred for depth of flavor</span>
+                        </div>
+                    </label>
+                    <label
+                        class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-xl border-l-4 border-transparent hover:border-primary transition-all cursor-pointer group">
+                        <input
+                            class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-all"
+                            type="checkbox" />
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Star Anise &amp; Cinnamon</span>
+                            <span class="text-xs text-on-surface-variant">Toasted whole spices</span>
+                        </div>
+                    </label>
+                    <label
+                        class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-xl border-l-4 border-transparent hover:border-primary transition-all cursor-pointer group">
+                        <input
+                            class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary transition-all"
+                            type="checkbox" />
+                        <div class="flex flex-col">
+                            <span class="font-bold text-on-surface">Fresh Herbs</span>
+                            <span class="text-xs text-on-surface-variant">Thai basil, cilantro, culantro</span>
+                        </div>
+                    </label>
+                </div>
+                <div class="bg-surface-container-low p-6 rounded-2xl">
+                    <h4 class="text-sm font-bold text-on-surface mb-4 uppercase tracking-widest">Nutritional Info</h4>
+                    <div class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-on-surface-variant text-sm">Protein</span>
+                            <span class="font-bold text-primary">32g</span>
+                        </div>
+                        <div class="w-full bg-outline-variant/20 h-1 rounded-full overflow-hidden">
+                            <div class="bg-primary h-full w-[70%]"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-on-surface-variant text-sm">Carbs</span>
+                            <span class="font-bold text-tertiary">58g</span>
+                        </div>
+                        <div class="w-full bg-outline-variant/20 h-1 rounded-full overflow-hidden">
+                            <div class="bg-tertiary h-full w-[50%]"></div>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-on-surface-variant text-sm">Fats</span>
+                            <span class="font-bold text-secondary">12g</span>
+                        </div>
+                        <div class="w-full bg-outline-variant/20 h-1 rounded-full overflow-hidden">
+                            <div class="bg-secondary h-full w-[30%]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Right Column: Instructions -->
+            <div class="lg:col-span-8 space-y-12">
+                <div>
+                    <h3 class="text-2xl font-headline font-bold text-on-surface mb-8">Step-by-Step Instructions</h3>
+                    <div class="space-y-10">
+                        <!-- Step 1 -->
+                        <div class="flex flex-col md:flex-row gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-headline font-extrabold text-xl">
+                                1</div>
+                            <div class="flex-grow space-y-4">
+                                <h4 class="text-lg font-bold text-on-surface">Prepare the Aromatic Base</h4>
+                                <p class="text-on-surface-variant leading-relaxed">Char the ginger and shallots over an
+                                    open flame or under a broiler until slightly blackened. This provides the smoky,
+                                    deep base for your broth. Rinse off any excess charred skin.</p>
+                                <img alt="Charred ginger" class="w-full h-48 md:h-64 object-cover rounded-2xl"
+                                    data-alt="Close-up of charred ginger and shallots on a grill with smoke rising, dark moody lighting"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuCY4bUWh49Yb21_ceAQux-8OheyRfWVTJ5lwjS2CsDxvxFQniCmHJrYOvkg3xWnhFBGNuZzGtY1dXvDP4jDKTua8qDf752NktDZN-Pc7qmrjLBkgg43FS3KeFGAOq3BuDszJ7UWyf_q9wdZ9lAr095U1CyHbNvlVEf7tTOywXsG5k9JcX-yKku2Wix3uL4gfhjU0BymgzR9IaBh8ltkSbC87Bn3G77V1aBC4c-rNRTiN38be35HyHzmlZINIkqmJjjZEeNy1tCvUZc" />
+                            </div>
+                        </div>
+                        <!-- Step 2 -->
+                        <div class="flex flex-col md:flex-row gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-headline font-extrabold text-xl">
+                                2</div>
+                            <div class="flex-grow space-y-4">
+                                <h4 class="text-lg font-bold text-on-surface">Simmer the Broth</h4>
+                                <p class="text-on-surface-variant leading-relaxed">Place chicken in a large pot, cover
+                                    with water, and bring to a boil. Skim off impurities. Add charred ginger, shallots,
+                                    and toasted spices. Simmer gently for 40 minutes.</p>
+                                <img alt="Pot of soup" class="w-full h-48 md:h-64 object-cover rounded-2xl"
+                                    data-alt="Steam rising from a large stainless steel pot filled with clear chicken broth and floating star anise"
+                                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs3wwsPxtw77eg-Lg-41vAb1FIRyXXHbh7YJO0uUXTCWTT1Kqadvr7w-RbY4qtYdR292Y0YN2Uy82ScxwJJ9PGGODKGZJPV8v0bTl6ws2fNq6wF9_NQjMvh9r5mWP_kwxNXlbL1_QVxm9vLJntW5P3xBUJOxv-OP9JtvDqbdojAvo0Dq6vEnA3wpKh0ljX5nfjaVa18OHjGUv9aOu8DR7ef38ISE1zsF6FAIsi4YQTdotfkr-Qyxf97Y6E8czISLRHDJVPbod_X2E" />
+                            </div>
+                        </div>
+                        <!-- Step 3 -->
+                        <div class="flex flex-col md:flex-row gap-6 group">
+                            <div
+                                class="flex-shrink-0 w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center font-headline font-extrabold text-xl">
+                                3</div>
+                            <div class="flex-grow space-y-4">
+                                <h4 class="text-lg font-bold text-on-surface">Assemble and Serve</h4>
+                                <p class="text-on-surface-variant leading-relaxed">Remove chicken and shred the meat.
+                                    Strain the broth and season with fish sauce. Soak noodles until tender. Arrange
+                                    noodles and chicken in bowls, pour over hot broth, and top with herbs.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Action Bar (Floating on Mobile, Fixed at bottom of content on desktop) -->
+                <div class="flex flex-col sm:flex-row gap-4 pt-8">
+                    <button
+                        class="flex-1 primary-cta-gradient text-white py-5 px-8 rounded-2xl font-bold flex items-center justify-center gap-3 shadow-[0_20px_40px_rgba(0,108,73,0.15)] hover:scale-[1.02] active:scale-95 transition-all">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                        Add to Meal Plan
+                    </button>
+                    <button
+                        class="bg-surface-container-highest text-on-surface py-5 px-8 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-surface-container-high transition-all">
+                        <span class="material-symbols-outlined">print</span>
+                        Print Recipe
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Bottom Navigation Bar (Hidden on this focused detail page as per UX Goal) -->
+    <nav
+        class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-6 pt-3 bg-white/80 dark:bg-slate-950/80 backdrop-blur-2xl z-50 rounded-t-3xl shadow-[0_-10px_40px_rgba(0,200,83,0.08)] border-t border-emerald-500/10">
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">home</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Home</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">add_circle</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Log</span>
+        </a>
+        <a class="flex flex-col items-center justify-center bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300 rounded-2xl px-5 py-1.5 transition-all"
+            href="#">
+            <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">restaurant_menu</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Recipes</span>
+        </a>
+        <a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 px-5 py-1.5 hover:text-emerald-500 transition-all"
+            href="#">
+            <span class="material-symbols-outlined">insights</span>
+            <span class="text-[11px] font-semibold font-inter tracking-wide mt-1">Progress</span>
+        </a>
+    </nav>
+</body>
+
+</html>

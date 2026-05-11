@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e9edff",
+                        "secondary-fixed": "#b0f0d6",
+                        "background": "#f9f9ff",
+                        "inverse-primary": "#4edea3",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d3daef",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "on-primary-fixed-variant": "#005236",
+                        "on-primary-container": "#004b32",
+                        "tertiary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-container": "#adedd3",
+                        "surface-tint": "#006c49",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "on-error": "#ffffff",
+                        "secondary": "#2b6954",
+                        "inverse-surface": "#293040",
+                        "on-surface-variant": "#3c4a3c",
+                        "outline-variant": "#bbcbb8",
+                        "on-tertiary-fixed-variant": "#004395",
+                        "primary": "#006c49",
+                        "on-secondary-fixed": "#002117",
+                        "outline": "#6c7b6a",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-container-highest": "#dce2f7",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary-container": "#2ac48b",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-container": "#003e8a",
+                        "on-secondary-container": "#306d58",
+                        "error": "#ba1a1a",
+                        "tertiary": "#005ac2",
+                        "primary-fixed": "#6ffbbe",
+                        "on-surface": "#141b2b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#e1e8fd",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#85adff",
+                        "surface-variant": "#dce2f7",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "2xl": "2rem",
+                        "3xl": "2.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                },
+            },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .nutri-glass {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+            border-left: 2px solid #006c49;
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-surface font-body text-on-surface antialiased">
+    <!-- TopAppBar -->
+    <header class="bg-emerald-50/70 backdrop-blur-xl docked full-width top-0 z-50 sticky">
+        <div class="flex justify-between items-center w-full px-6 py-4 max-w-7xl mx-auto">
+            <div class="flex items-center gap-4">
+                <button
+                    class="hover:bg-emerald-100/50 transition-colors p-2 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-emerald-700" data-icon="arrow_back">arrow_back</span>
+                </button>
+                <h1 class="text-xl font-extrabold tracking-tight text-emerald-700 font-headline">Phở Bò</h1>
+            </div>
+            <div class="flex items-center gap-3">
+                <button
+                    class="hover:bg-emerald-100/50 transition-colors p-2 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-emerald-700" data-icon="favorite">favorite</span>
+                </button>
+                <button
+                    class="hover:bg-emerald-100/50 transition-colors p-2 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-emerald-700" data-icon="share">share</span>
+                </button>
+            </div>
+        </div>
+    </header>
+    <main class="max-w-7xl mx-auto pb-32">
+        <!-- Hero Section: Food Image -->
+        <section class="relative w-full h-[353px] min-h-[350px] overflow-hidden">
+            <img alt="Phở Bò" class="w-full h-full object-cover"
+                data-alt="Steaming bowl of authentic Vietnamese Pho Bo with thin beef slices, fresh herbs, and rice noodles in a clear aromatic broth"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqcWUzsSuHtvjeBkV3CQg1TjtHBByGKmZ24PHRJqvsZHFUCsAtDQYupNT-AFNPDdbmTj5R5jGiogjqDQ1OLHq4__eCZAR25HYBW8vTz7V6hElwWXdkYZM9s5iR4c-b0AtAAkM_6_2Qr67-eFAZDNu0NxWpMq_6dm6uP5payHlqi9F6845oAofP1naDH5p2BJClmtvj6S4d4_X_2HoL8Opu5-8YTXMezKU4A9Ug8cSeAYUMrmwYyU0WzECY2Diq1Kdiz0Ml0U0w2pU" />
+            <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+            <div class="absolute bottom-8 left-8 right-8">
+                <div class="flex items-end justify-between">
+                    <div>
+                        <span
+                            class="px-3 py-1 bg-primary-container text-on-primary-container text-xs font-bold rounded-full mb-3 inline-block">Vietnamese
+                            Cuisine</span>
+                        <h2 class="text-4xl font-extrabold text-white font-headline tracking-tight">Phở Bò</h2>
+                        <p class="text-white/80 text-sm mt-1">Traditional Beef Noodle Soup • 1 standard bowl (500g)</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <!-- Content Canvas -->
+        <div class="px-6 -mt-10 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Main Content: Left Side (8 cols) -->
+            <div class="lg:col-span-8 space-y-8">
+                <!-- Calorie & Macro Bento Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Calorie Display Card -->
+                    <div
+                        class="md:col-span-1 bg-surface-container-lowest p-8 rounded-2xl flex flex-col items-center justify-center text-center">
+                        <span class="text-on-surface-variant text-xs font-semibold tracking-widest uppercase mb-2">Total
+                            Calories</span>
+                        <div class="text-6xl font-extrabold text-primary font-headline">450</div>
+                        <span class="text-on-surface-variant text-sm mt-2">kcal per serving</span>
+                    </div>
+                    <!-- Macro Bars Card -->
+                    <div class="md:col-span-2 bg-surface-container-lowest p-8 rounded-2xl">
+                        <h3 class="text-lg font-bold font-headline mb-6">Macronutrient Breakdown</h3>
+                        <div class="space-y-6">
+                            <!-- Protein -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm font-semibold">
+                                    <span class="text-on-surface">Protein</span>
+                                    <span class="text-primary">28g <span
+                                            class="text-on-surface-variant font-normal ml-1">(35%)</span></span>
+                                </div>
+                                <div class="h-3 w-full bg-surface-container-low rounded-full overflow-hidden">
+                                    <div class="h-full bg-primary rounded-full" style="width: 35%"></div>
+                                </div>
+                            </div>
+                            <!-- Carbs -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm font-semibold">
+                                    <span class="text-on-surface">Carbohydrates</span>
+                                    <span class="text-tertiary">52g <span
+                                            class="text-on-surface-variant font-normal ml-1">(50%)</span></span>
+                                </div>
+                                <div class="h-3 w-full bg-surface-container-low rounded-full overflow-hidden">
+                                    <div class="h-full bg-tertiary rounded-full" style="width: 50%"></div>
+                                </div>
+                            </div>
+                            <!-- Fat -->
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm font-semibold">
+                                    <span class="text-on-surface">Fats</span>
+                                    <span class="text-secondary">14g <span
+                                            class="text-on-surface-variant font-normal ml-1">(15%)</span></span>
+                                </div>
+                                <div class="h-3 w-full bg-surface-container-low rounded-full overflow-hidden">
+                                    <div class="h-full bg-secondary rounded-full" style="width: 15%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Nutri-Glass Insights -->
+                <div class="nutri-glass p-6 rounded-xl flex items-start gap-4">
+                    <span class="material-symbols-outlined text-primary text-3xl"
+                        data-icon="auto_awesome">auto_awesome</span>
+                    <div>
+                        <h4 class="font-bold text-on-surface font-headline">AI Nutritional Insight</h4>
+                        <p class="text-on-surface-variant text-sm mt-1 leading-relaxed">
+                            Phở Bò is an excellent source of lean protein and collagen from bone broth. To optimize your
+                            glycemic response, consider adding extra bean sprouts for fiber.
+                        </p>
+                    </div>
+                </div>
+                <!-- Vitamins & Minerals List -->
+                <div class="bg-surface-container-low p-8 rounded-2xl">
+                    <h3 class="text-xl font-bold font-headline mb-6">Micronutrients &amp; Minerals</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-12">
+                        <div class="flex justify-between items-center py-2 border-b border-outline-variant/10">
+                            <span class="text-on-surface-variant">Vitamin A</span>
+                            <span class="font-bold text-on-surface">12% DV</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-outline-variant/10">
+                            <span class="text-on-surface-variant">Vitamin C</span>
+                            <span class="font-bold text-on-surface">8% DV</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-outline-variant/10">
+                            <span class="text-on-surface-variant">Calcium</span>
+                            <span class="font-bold text-on-surface">4% DV</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-outline-variant/10">
+                            <span class="text-on-surface-variant">Iron</span>
+                            <span class="font-bold text-on-surface">18% DV</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-outline-variant/10">
+                            <span class="text-on-surface-variant">Sodium</span>
+                            <span class="font-bold text-error">980mg</span>
+                        </div>
+                        <div class="flex justify-between items-center py-2 border-b border-outline-variant/10">
+                            <span class="text-on-surface-variant">Potassium</span>
+                            <span class="font-bold text-on-surface">420mg</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Sidebar: Right Side (4 cols) -->
+            <aside class="lg:col-span-4 space-y-6">
+                <!-- Action Card -->
+                <div class="bg-surface-container-lowest p-6 rounded-2xl shadow-sm sticky top-28">
+                    <h4 class="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-4">Log this meal
+                    </h4>
+                    <div class="space-y-4">
+                        <button
+                            class="w-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold py-4 px-6 rounded-xl flex items-center justify-between transition-all group">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary" data-icon="scale">scale</span>
+                                <span>1 serving (500g)</span>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform"
+                                data-icon="edit">edit</span>
+                        </button>
+                        <button
+                            class="w-full bg-surface-container-high hover:bg-surface-container-highest text-on-surface font-semibold py-4 px-6 rounded-xl flex items-center justify-between transition-all group">
+                            <div class="flex items-center gap-3">
+                                <span class="material-symbols-outlined text-primary"
+                                    data-icon="schedule">schedule</span>
+                                <span>Lunch (Now)</span>
+                            </div>
+                            <span
+                                class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform"
+                                data-icon="expand_more">expand_more</span>
+                        </button>
+                        <button
+                            class="w-full bg-gradient-to-br from-primary to-primary-container text-white font-bold py-5 px-6 rounded-xl flex items-center justify-center gap-3 active:scale-95 duration-150 mt-4">
+                            <span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+                            Add to Log
+                        </button>
+                    </div>
+                    <div class="mt-8 space-y-4">
+                        <h4 class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Quick Actions
+                        </h4>
+                        <div class="flex flex-wrap gap-2">
+                            <span
+                                class="px-4 py-2 bg-secondary-container text-on-secondary-container text-xs font-bold rounded-full cursor-pointer hover:opacity-80 transition-opacity">Custom
+                                Portion</span>
+                            <span
+                                class="px-4 py-2 bg-surface-container text-on-surface text-xs font-bold rounded-full cursor-pointer hover:bg-surface-container-high transition-colors">Save
+                                Recipe</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+    <!-- Navigation Suppressed for task-focused detail screen -->
+</body>
+
+</html>

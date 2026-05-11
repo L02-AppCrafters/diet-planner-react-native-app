@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { Tabs } from 'expo-router';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { AnalyticsUpIcon, Home03Icon, SpoonAndForkIcon, UserSquareIcon } from '@hugeicons/core-free-icons';
+import { AnalyticsUpIcon, Home03Icon, SpoonAndForkIcon, UserSquareIcon, Calendar02Icon } from '@hugeicons/core-free-icons';
 
 import Colors from './../../shared/Colors';
 
@@ -23,6 +23,21 @@ export default function TabLayout() {
               strokeWidth = {1.5}
             />
           ),
+          tabBarLabel: 'Home'
+        }}
+      />
+      <Tabs.Screen
+        name='Log'
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <HugeiconsIcon
+              icon = {Calendar02Icon}
+              size = {size}
+              color = {color}
+              strokeWidth = {1.5}
+            />
+          ),
+          tabBarLabel: 'Log'
         }}
       />
       <Tabs.Screen
@@ -36,6 +51,7 @@ export default function TabLayout() {
               strokeWidth = {1.5}
             />
           ),
+          tabBarLabel: 'Recipes'
         }}
       />
       <Tabs.Screen
@@ -49,6 +65,7 @@ export default function TabLayout() {
               strokeWidth = {1.5}
             />
           ),
+          tabBarLabel: 'Progress'
         }}
       />
       <Tabs.Screen
@@ -62,6 +79,7 @@ export default function TabLayout() {
               strokeWidth = {1.5}
             />
           ),
+          tabBarLabel: 'Profile'
         }}
       />
     </Tabs>

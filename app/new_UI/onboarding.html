@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Nutri Planner - Select Your Goal</title>
+    <!-- Material Symbols Outlined -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#e9edff",
+                        "secondary-fixed": "#b0f0d6",
+                        "background": "#f9f9ff",
+                        "inverse-primary": "#4edea3",
+                        "on-tertiary": "#ffffff",
+                        "surface-dim": "#d3daef",
+                        "secondary-fixed-dim": "#95d3ba",
+                        "on-primary-fixed-variant": "#005236",
+                        "on-primary-container": "#004b32",
+                        "tertiary-fixed-dim": "#adc6ff",
+                        "tertiary-fixed": "#d8e2ff",
+                        "secondary-container": "#adedd3",
+                        "surface-tint": "#006c49",
+                        "error-container": "#ffdad6",
+                        "on-secondary": "#ffffff",
+                        "on-background": "#141b2b",
+                        "on-error": "#ffffff",
+                        "secondary": "#2b6954",
+                        "inverse-surface": "#293040",
+                        "on-surface-variant": "#3c4a3c",
+                        "outline-variant": "#bbcbb8",
+                        "on-tertiary-fixed-variant": "#004395",
+                        "primary": "#006c49",
+                        "on-secondary-fixed": "#002117",
+                        "outline": "#6c7b6a",
+                        "surface-container-low": "#f1f3ff",
+                        "surface-container-highest": "#dce2f7",
+                        "on-secondary-fixed-variant": "#0b513d",
+                        "inverse-on-surface": "#edf0ff",
+                        "primary-container": "#2ac48b",
+                        "on-tertiary-fixed": "#001a42",
+                        "surface-bright": "#f9f9ff",
+                        "on-tertiary-container": "#003e8a",
+                        "on-secondary-container": "#306d58",
+                        "error": "#ba1a1a",
+                        "tertiary": "#005ac2",
+                        "primary-fixed": "#6ffbbe",
+                        "on-surface": "#141b2b",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary": "#ffffff",
+                        "primary-fixed-dim": "#4edea3",
+                        "surface-container-high": "#e1e8fd",
+                        "surface": "#f9f9ff",
+                        "tertiary-container": "#85adff",
+                        "surface-variant": "#dce2f7",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed": "#002113"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Manrope"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(12px);
+        }
+
+        .ambient-lift {
+            box-shadow: 0 20px 40px rgba(20, 27, 43, 0.06);
+        }
+
+        .primary-gradient {
+            background: linear-gradient(135deg, #006c49 0%, #2ac48b 100%);
+        }
+    </style>
+    <style>
+        body {
+            min-height: max(884px, 100dvh);
+        }
+    </style>
+</head>
+
+<body class="bg-background font-body text-on-surface selection:bg-secondary-container">
+    <!-- Top Navigation Shell Suppressed for Onboarding as per Filter Rule -->
+    <main class="min-h-screen flex flex-col items-center px-6 py-12 md:py-24 max-w-5xl mx-auto">
+        <!-- Header Section -->
+        <header class="text-center mb-12 md:mb-20">
+            <h1 class="font-headline text-4xl md:text-6xl font-extrabold tracking-tight text-on-background mb-4">
+                Choose your path
+            </h1>
+            <p class="text-on-surface-variant text-lg max-w-xl mx-auto leading-relaxed">
+                Personalize your Nutri Planner experience by selecting the primary goal you want to achieve today.
+            </p>
+        </header>
+        <!-- Goals Selection Grid: Bento Style -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full">
+            <!-- Option 1: Lose Weight -->
+            <button
+                class="group relative flex flex-col text-left overflow-hidden rounded-xl surface-container-lowest ambient-lift border-2 border-transparent hover:border-primary-container transition-all duration-300 active:scale-95">
+                <div class="h-48 w-full overflow-hidden">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        data-alt="Close-up of vibrant fresh salad with leafy greens, colorful vegetables, and sliced avocado in a minimal ceramic bowl with bright natural light"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBV-lT2vhv97FsxieuSZYEn89KEm_vbWiGJM_6PrKDiX7JiO9mma7a0LqGyLm8ncpQpg1x-p7ApUJIRrjkfMiCFXEowr9u96hRE-3UV41KbRUQZsEApWcwz3fYe6-W06XAh_dEzQhHhboWdWLBLdSJbDr0i301rYyMVuwd1q3oFcd9nizBL1eEw3lCzdGsHY1UtmBf-nkyOyYbk6gEEgCaoTGOCcSb3p42es0c6W4U4V1ERl1OcnFz0bU9vZSfIn21UCg1glAFnaFI" />
+                </div>
+                <div class="p-8 flex flex-col h-full bg-surface-container-lowest">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-3xl"
+                                data-icon="monitor_weight">monitor_weight</span>
+                        </div>
+                        <h3 class="font-headline text-xl font-bold">Lose Weight</h3>
+                    </div>
+                    <p class="text-on-surface-variant text-sm leading-relaxed mb-6">
+                        Burn fat and optimize your body composition with calorie-controlled AI plans.
+                    </p>
+                    <div class="mt-auto flex items-center text-primary font-semibold text-sm">
+                        Select Plan <span class="material-symbols-outlined ml-2 text-lg">chevron_right</span>
+                    </div>
+                </div>
+            </button>
+            <!-- Option 2: Gain Muscle -->
+            <button
+                class="group relative flex flex-col text-left overflow-hidden rounded-xl surface-container-lowest ambient-lift border-2 border-transparent hover:border-primary-container transition-all duration-300 active:scale-95">
+                <div class="h-48 w-full overflow-hidden">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        data-alt="Overhead view of a protein-rich meal with grilled chicken breast, quinoa, and steamed broccoli on a matte black plate with dramatic lighting"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuC_pEq7pc1YbAvJiGIl1WiokosV_Gj3LCZFigJAVuBMA5aOxfnKssmlkLS3hP92T52TG7rY0ZdQ6UrzvDBPEWxZN_jFOYfRSR0TNDbvIRDYxmYhXM59J9MXjRNfuvhLJ5eXJc2gjkaIZs4ren19CUFzUMLD18QWZhryfHZlYooXW2lgxzDY7hoy7qBEVf_3HyctmT0huxfcTAgt_eLjLCqH_Gn0IgxCgHDsDjA4NchIWzkNeSysVCHwzNYwqRKfFWy27de9j94Sx8Q" />
+                </div>
+                <div class="p-8 flex flex-col h-full bg-surface-container-lowest">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-3xl"
+                                data-icon="fitness_center">fitness_center</span>
+                        </div>
+                        <h3 class="font-headline text-xl font-bold">Gain Muscle</h3>
+                    </div>
+                    <p class="text-on-surface-variant text-sm leading-relaxed mb-6">
+                        Fuel your gains with high-protein macronutrient targeting and surplus guidance.
+                    </p>
+                    <div class="mt-auto flex items-center text-primary font-semibold text-sm">
+                        Select Plan <span class="material-symbols-outlined ml-2 text-lg">chevron_right</span>
+                    </div>
+                </div>
+            </button>
+            <!-- Option 3: Healthy Lifestyle -->
+            <button
+                class="group relative flex flex-col text-left overflow-hidden rounded-xl surface-container-lowest ambient-lift border-2 border-transparent hover:border-primary-container transition-all duration-300 active:scale-95">
+                <div class="h-48 w-full overflow-hidden">
+                    <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        data-alt="Sunlit kitchen scene with fresh fruits on a marble counter and a person pouring water into a glass, bright and airy atmosphere"
+                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuBS4ytKXL8cT6DSeWsadXJ7Wc8U4qxHR8GIamg95fmcm1lmSDHlF6IVgP_7-m3189qCyMNuFZWBRVSRHK5o1OdSGA5QqFjnSRxTjoLXeJkWOCA37LnLPomvbSPZo1qlQdNb6MDejG2LUlDMs1cezqHqDCZFgswIWiHvabAv_PwFjNf6cREKUhkFe7KLTSxq_4kJVJGaZ1n7ob9UyozWoWLNYxVQ6CmVkOmzVDN5QpO5fLU3hBcuQM04VVkh_aFDOO2PEfClpcMpWfw" />
+                </div>
+                <div class="p-8 flex flex-col h-full bg-surface-container-lowest">
+                    <div class="flex items-center gap-3 mb-4">
+                        <div class="w-12 h-12 rounded-lg bg-emerald-50 flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined text-3xl" data-icon="favorite">favorite</span>
+                        </div>
+                        <h3 class="font-headline text-xl font-bold">Healthy Lifestyle</h3>
+                    </div>
+                    <p class="text-on-surface-variant text-sm leading-relaxed mb-6">
+                        Maintain balance, increase energy levels, and improve long-term longevity.
+                    </p>
+                    <div class="mt-auto flex items-center text-primary font-semibold text-sm">
+                        Select Plan <span class="material-symbols-outlined ml-2 text-lg">chevron_right</span>
+                    </div>
+                </div>
+            </button>
+        </div>
+        <!-- AI Insight Card - Glassmorphism -->
+        <div class="mt-16 w-full max-w-2xl">
+            <div class="rounded-xl glass-card p-6 border-l-4 border-primary flex items-start gap-4">
+                <span class="material-symbols-outlined text-primary" data-icon="auto_awesome">auto_awesome</span>
+                <div>
+                    <p class="font-headline text-on-background font-bold mb-1">AI Recommendation</p>
+                    <p class="text-on-surface-variant text-sm">Based on recent health trends, most users start with
+                        'Healthy Lifestyle' to build sustainable habits before specializing.</p>
+                </div>
+            </div>
+        </div>
+        <!-- Footer Action -->
+        <div class="mt-16 w-full max-w-md">
+            <button
+                class="w-full primary-gradient text-white py-5 rounded-xl font-bold text-lg hover:brightness-110 transition-all duration-300 active:scale-[0.98] ambient-lift">
+                Continue
+            </button>
+            <p class="text-center text-on-surface-variant text-sm mt-6">
+                You can change this goal at any time in your profile settings.
+            </p>
+        </div>
+    </main>
+    <!-- Bottom Nav Shell Suppressed for Focused Journey -->
+</body>
+
+</html>

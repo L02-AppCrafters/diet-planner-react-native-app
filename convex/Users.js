@@ -19,7 +19,6 @@ export const CreateNewUser = mutation({
       }
 
       const result = await ctx.db.insert('users', {
-        _id,
         ...data
       });
 

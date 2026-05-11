@@ -1,5 +1,5 @@
 import { View, Text, Image, Alert } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState, useContext } from 'react';
 import { useConvex } from 'convex/react';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -12,6 +12,7 @@ import Button from '../../components/shared/Button';
 
 export default function SignIn() {
   const convex = useConvex();
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,6 +34,7 @@ export default function SignIn() {
 
         console.log(userData);
         setUser(userData);
+        router.replace('/(tabs)/Home');
       })
       .catch((error) => {
         const errorCode = error.code;
