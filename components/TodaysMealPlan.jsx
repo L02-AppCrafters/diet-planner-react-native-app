@@ -18,13 +18,19 @@ export default function TodaysMealPlan() {
   const convex = useConvex();
 
   useEffect(() => {
-    user && getTodaysMealPlan();
+    if (user?._id) {
+      getTodaysMealPlan();
+    }
   }, [user])
 
   const getTodaysMealPlan = async () => {
+    if (!user?._id) {
+      return;
+    }
+
     const result = await convex.query(api.MealPlan.GetTodaysMealPlan, {
       date: moment().format('DD/MM/YYYY'),
-      uid: user?._id
+      uid: user._id
     });
     setMealPlan(result);
   }
