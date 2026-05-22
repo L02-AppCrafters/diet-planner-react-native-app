@@ -10,6 +10,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
 import { colors } from '../../theme/colors';
@@ -68,8 +69,16 @@ export function AddSnackScreen() {
       </View>
 
       <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCard}>
-        <View style={styles.scanOverlay} />
-        <View style={styles.scanBottomShade} />
+        <Svg height="100%" style={styles.scanGradient} width="100%">
+          <Defs>
+            <LinearGradient id="scanGradient" x1="0" x2="0" y1="0" y2="1">
+              <Stop offset="0" stopColor="#07111A" stopOpacity="0.28" />
+              <Stop offset="0.48" stopColor="#07111A" stopOpacity="0.5" />
+              <Stop offset="1" stopColor="#07111A" stopOpacity="0.78" />
+            </LinearGradient>
+          </Defs>
+          <Rect fill="url(#scanGradient)" height="100%" width="100%" />
+        </Svg>
         <View style={[styles.scanCorner, styles.scanCornerTopLeft]} />
         <View style={[styles.scanCorner, styles.scanCornerTopRight]} />
         <View style={[styles.scanCorner, styles.scanCornerBottomLeft]} />
@@ -327,14 +336,6 @@ const styles = StyleSheet.create({
     marginTop: 44,
     overflow: 'hidden',
   },
-  scanBottomShade: {
-    backgroundColor: 'rgba(9,18,28,0.42)',
-    bottom: 0,
-    height: '48%',
-    left: 0,
-    position: 'absolute',
-    right: 0,
-  },
   scanCorner: {
     borderColor: '#34D399',
     height: 38,
@@ -382,9 +383,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     resizeMode: 'cover',
   },
-  scanOverlay: {
+  scanGradient: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(6,13,21,0.46)',
   },
   scanSubtitle: {
     color: 'rgba(255,255,255,0.74)',
