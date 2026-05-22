@@ -10,7 +10,7 @@ import {
 } from '@expo-google-fonts/inter';
 import { Manrope_400Regular, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
 import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
-import { HomeScreen } from './src/screens/HomeScreen';
+import { HomeScreen } from './src/screens/home/HomeScreen';
 import { colors } from './src/theme/colors';
 import { AppTab } from './src/types/navigation';
 

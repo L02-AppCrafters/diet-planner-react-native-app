@@ -1,21 +1,23 @@
 import { useState } from 'react';
-import { Image, ImageBackground, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { svgIcons } from '../assets/icons';
-import { SvgIcon } from '../components/ui/SvgIcon';
-import { macros } from '../data/dailyTracker';
-import { colors } from '../theme/colors';
-import { spacing } from '../theme/spacing';
-import { fontFamily } from '../theme/typography';
-import { AppTab } from '../types/navigation';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Circle } from 'react-native-svg';
+import { svgIcons } from '../../assets/icons';
+import { SvgIcon } from '../../components/ui/SvgIcon';
+import { macros } from '../../data/dailyTracker';
+import { AddSnackScreen } from '../log/AddSnackScreen';
+import { LogScreen } from '../log/LogScreen';
+import { ProgressScreen } from '../progress/ProgressScreen';
+import { RecipesScreen } from '../recipes/RecipesScreen';
+import { colors } from '../../theme/colors';
+import { spacing } from '../../theme/spacing';
+import { fontFamily } from '../../theme/typography';
+import { AppTab } from '../../types/navigation';
 
-const lunchImage = require('../../assets/lunch.png');
-const logBreakfastImage = require('../../assets/log-breakfast-new.png');
-const logLunchImage = require('../../assets/log-lunch-new.png');
-const logDinnerImage = require('../../assets/log-dinner-new.png');
-const caloriesConsumed = 1240;
-const caloriesGoal = 2450;
-const caloriesLeft = caloriesGoal - caloriesConsumed;
-const calorieProgress = caloriesConsumed / caloriesGoal;
+const lunchImage = require('../../../assets/lunch.png');
+const calorieSummary = {
+  goal: 2450,
+  left: 1210,
+};
 const waterConsumedLiters = 1.2;
 const waterGoalLiters = 2.5;
 const waterCupLiters = 0.5;
@@ -75,12 +77,29 @@ type HomeScreenProps = {
   onTabChange: (tab: AppTab) => void;
 };
 
+type CalorieSummary = {
+  goal: number;
+  left: number;
+};
+
 const tabs: Array<{ key: AppTab; icon: string; iconHeight: number; iconWidth: number }> = [
   { key: 'Home', icon: svgIcons.home, iconHeight: 18, iconWidth: 16 },
   { key: 'Log', icon: svgIcons.log, iconHeight: 20, iconWidth: 20 },
   { key: 'Recipes', icon: svgIcons.recipes, iconHeight: 18, iconWidth: 18 },
   { key: 'Progress', icon: svgIcons.progress, iconHeight: 17, iconWidth: 22 },
 ];
+
+function getCalorieRingMetrics(summary: CalorieSummary) {
+  const goal = Math.max(summary.goal, 1);
+  const left = Math.min(Math.max(summary.left, 0), goal);
+  const leftProgress = left / goal;
+
+  return {
+    left,
+    leftPercent: Math.round(leftProgress * 100),
+    leftProgress,
+  };
+}
 
 export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack'>('log');
@@ -91,13 +110,14 @@ export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
       <View style={styles.phone}>
         <Header
           onBack={isAddSnack ? () => setLogRoute('log') : undefined}
-          title={isAddSnack ? 'NutriPlanner' : activeTab === 'Log' ? 'Weekly Plan' : 'Nutri Planner'}
+          title={isAddSnack ? 'Add Snack' : activeTab === 'Log' ? 'Weekly Plan' : 'Nutri Planner'}
         />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {activeTab === 'Home' ? <HomeContent /> : null}
-          {activeTab === 'Log' && logRoute === 'log' ? <LogContent onAddSnack={() => setLogRoute('addSnack')} /> : null}
-          {isAddSnack ? <AddSnackContent /> : null}
-          {activeTab !== 'Home' && activeTab !== 'Log' ? <PlaceholderPage tab={activeTab} /> : null}
+          {activeTab === 'Log' && logRoute === 'log' ? <LogScreen onAddSnack={() => setLogRoute('addSnack')} /> : null}
+          {isAddSnack ? <AddSnackScreen /> : null}
+          {activeTab === 'Recipes' ? <RecipesScreen /> : null}
+          {activeTab === 'Progress' ? <ProgressScreen /> : null}
         </ScrollView>
         <BottomNavigation
           activeTab={activeTab}
@@ -129,303 +149,6 @@ function Header({ onBack, title }: { onBack?: () => void; title: string }) {
       <Pressable accessibilityLabel="Open settings" style={styles.gearButton}>
         <SvgIcon height={20} source={svgIcons.settings} width={21} />
       </Pressable>
-    </View>
-  );
-}
-
-function LogContent({ onAddSnack }: { onAddSnack: () => void }) {
-  return (
-    <View style={styles.logContent}>
-      <View style={styles.energyCard}>
-        <Text style={styles.energyLabel}>Energy Budget</Text>
-        <View style={styles.energyRow}>
-          <Text style={styles.energyValue}>1,420</Text>
-          <Text style={styles.energyGoal}>/ 2,100</Text>
-        </View>
-        <View style={styles.energyMetaRow}>
-          <Text style={styles.energyUnit}>kcal</Text>
-          <Text style={styles.plannedBadge}>67% Planned</Text>
-        </View>
-        <View style={styles.energyTrack}>
-          <View style={styles.energyFill} />
-        </View>
-      </View>
-
-      <View style={styles.optimizationCard}>
-        <Text style={styles.optimizationTitle}>AI Optimization</Text>
-        <Text style={styles.optimizationCopy}>
-          Your plan is low in Fiber today. We suggest adding Chia Seeds to your afternoon snack.
-        </Text>
-      </View>
-
-      <View style={styles.datePicker}>
-        {[
-          ['MON', '12'],
-          ['TUE', '13'],
-          ['WED', '14'],
-          ['THU', '15'],
-        ].map(([day, date]) => {
-          const active = day === 'WED';
-          return (
-            <View key={day} style={[styles.dateCard, active && styles.dateCardActive]}>
-              <Text style={[styles.dateDay, active && styles.dateTextActive]}>{day}</Text>
-              <Text style={[styles.dateNumber, active && styles.dateTextActive]}>{date}</Text>
-              {active ? <View style={styles.dateDot} /> : null}
-            </View>
-          );
-        })}
-      </View>
-
-      <MealLogCard
-        description="Creamy avocado toast topped with poached eggs, herbs, and chili flakes for steady morning energy."
-        iconBg="#FFF0DC"
-        iconHeight={17}
-        iconSource={svgIcons.breakfast}
-        iconWidth={17}
-        image={logBreakfastImage}
-        macros={[
-          { label: 'CALS', value: '420' },
-          { label: 'PROTEIN', value: '18g' },
-          { label: 'FAT', value: '22g' },
-        ]}
-        time="08:30 AM"
-        title="Avocado & Poached Egg"
-        type="Breakfast"
-      />
-      <MealLogCard
-        description="A balanced bowl with grilled chicken, chickpeas, cucumber, and rice for a filling midday meal."
-        iconBg="#D8FFE9"
-        iconHeight={15}
-        iconSource={svgIcons.lunch}
-        iconWidth={12}
-        image={logLunchImage}
-        macros={[
-          { label: 'CALS', value: '650' },
-          { label: 'PROTEIN', value: '32g' },
-          { label: 'FAT', value: '18g' },
-        ]}
-        time="12:45 PM"
-        title="Mediterranean Power Bowl"
-        type="Lunch"
-      />
-
-      <DinnerLogCard />
-
-      <Pressable accessibilityRole="button" onPress={onAddSnack} style={styles.addSnackCard}>
-        <View style={styles.addSnackCircle}>
-          <SvgIcon height={14} source={svgIcons.add} width={14} />
-        </View>
-        <Text style={styles.addSnackTitle}>Add Snack</Text>
-        <Text style={styles.addSnackCopy}>Keep your metabolism active</Text>
-      </Pressable>
-      <HydrationLogCard />
-    </View>
-  );
-}
-
-function AddSnackContent() {
-  return (
-    <View style={styles.addSnackPage}>
-      <View style={styles.searchBox}>
-        <Text style={styles.searchIcon}>⌕</Text>
-        <TextInput
-          editable={false}
-          placeholder="Search food, brands, or recipes..."
-          placeholderTextColor={colors.inkSoft}
-          style={styles.searchInput}
-        />
-      </View>
-
-      <View style={styles.segmented}>
-        {['Breakfast', 'Lunch', 'Dinner'].map((item, index) => (
-          <View key={item} style={[styles.segmentItem, index === 0 && styles.segmentItemActive]}>
-            <Text style={[styles.segmentText, index === 0 && styles.segmentTextActive]}>{item}</Text>
-          </View>
-        ))}
-      </View>
-
-      <View style={styles.scanCard}>
-        <View style={styles.scanOverlay} />
-        <View style={styles.scanIconCircle}>
-          <Text style={styles.scanIcon}>▥</Text>
-        </View>
-        <Text style={styles.scanTitle}>Scan Barcode</Text>
-        <Text style={styles.scanSubtitle}>Instant nutrient extraction</Text>
-      </View>
-
-      <View style={styles.addSnackSectionHeader}>
-        <Text style={styles.addSnackSectionTitle}>Recent Selections</Text>
-        <Text style={styles.viewHistory}>View History</Text>
-      </View>
-
-      <View style={styles.recentHeroCard}>
-        <View style={styles.recentRail} />
-        <View style={styles.recentImage} />
-        <View style={styles.recentCopy}>
-          <Text style={styles.recentTitle}>Avocado Toast</Text>
-          <Text style={styles.recentMeta}>280 kcal • Artisan Pantry</Text>
-        </View>
-        <Pressable style={styles.recentAddButton}>
-          <Text style={styles.recentAddText}>+</Text>
-        </Pressable>
-      </View>
-
-      <View style={styles.recentGrid}>
-        <SmallRecentCard accent="#0B6BD3" calories="120 kcal" title="Greek Yogurt" />
-        <SmallRecentCard accent={colors.primaryMid} calories="45 kcal" title="Matcha Latte" />
-      </View>
-
-      <View style={styles.recommendationCard}>
-        <View style={styles.insightRail} />
-        <View style={styles.recommendationInner}>
-          <View style={styles.insightHeadingRow}>
-            <SvgIcon height={22} source={svgIcons.aiInsight} width={22} />
-            <Text style={styles.addSnackRecommendationTitle}>AI Recommendation</Text>
-          </View>
-          <Text style={styles.addSnackRecommendationText}>
-            Based on your low fiber intake yesterday, scanning a leafy green salad or adding flax seeds to your breakfast
-            would optimize your biome score today.
-          </Text>
-        </View>
-      </View>
-
-      <Text style={styles.discoverTitle}>Discover</Text>
-      <View style={styles.discoverRow}>
-        <DiscoverCard label="Restaurants" symbol="🍴" />
-        <DiscoverCard label="Recipes" symbol="□" />
-        <DiscoverCard label="Favorites" symbol="♡" />
-      </View>
-    </View>
-  );
-}
-
-function SmallRecentCard({ accent, calories, title }: { accent: string; calories: string; title: string }) {
-  return (
-    <View style={styles.smallRecentCard}>
-      <View style={[styles.smallRecentRail, { backgroundColor: accent }]} />
-      <View style={styles.smallRecentImage} />
-      <Text style={styles.smallRecentTitle}>{title}</Text>
-      <Text style={styles.smallRecentCalories}>{calories}</Text>
-      <Pressable style={styles.smallRecentButton}>
-        <Text style={styles.smallRecentButtonText}>Log</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function DiscoverCard({ label, symbol }: { label: string; symbol: string }) {
-  return (
-    <View style={styles.discoverCard}>
-      <View style={styles.discoverIconCircle}>
-        <Text style={styles.discoverIcon}>{symbol}</Text>
-      </View>
-      <Text style={styles.discoverLabel}>{label}</Text>
-    </View>
-  );
-}
-
-type MealLogCardProps = {
-  iconBg: string;
-  iconHeight: number;
-  iconSource: string;
-  iconWidth: number;
-  image: number;
-  description: string;
-  macros: Array<{ label: string; value: string }>;
-  time: string;
-  title: string;
-  type: string;
-};
-
-function MealLogCard({
-  description,
-  iconBg,
-  iconHeight,
-  iconSource,
-  iconWidth,
-  image,
-  macros,
-  time,
-  title,
-  type,
-}: MealLogCardProps) {
-  return (
-    <View style={styles.dinnerCard}>
-      <View style={styles.dinnerImageFrame}>
-        <Image source={image} style={styles.dinnerImage} />
-      </View>
-      <View style={styles.logMealHeader}>
-        <View style={[styles.mealIconCircle, { backgroundColor: iconBg }]}>
-          <SvgIcon height={iconHeight} source={iconSource} width={iconWidth} />
-        </View>
-        <Text style={styles.dinnerMealType}>{type}</Text>
-        <Text style={styles.timeBadge}>{time}</Text>
-      </View>
-      <Text style={styles.dinnerTitle}>{title}</Text>
-      <Text style={styles.dinnerCopy}>{description}</Text>
-      <View style={styles.dinnerMacroRow}>
-        {macros.map((macro) => (
-          <DinnerMacro key={macro.label} label={macro.label} value={macro.value} />
-        ))}
-      </View>
-    </View>
-  );
-}
-
-function DinnerLogCard() {
-  return (
-    <View style={styles.dinnerCard}>
-      <View style={styles.dinnerImageFrame}>
-        <Image source={logDinnerImage} style={styles.dinnerImage} />
-      </View>
-      <View style={styles.logMealHeader}>
-        <View style={[styles.mealIconCircle, { backgroundColor: '#E2E1FF' }]}>
-          <SvgIcon height={15} source={svgIcons.dinner} width={17} />
-        </View>
-        <Text style={styles.dinnerMealType}>Dinner</Text>
-        <Text style={styles.timeBadge}>07:15 PM</Text>
-      </View>
-      <Text style={styles.dinnerTitle}>Atlantic Salmon & Asparagus</Text>
-      <Text style={styles.dinnerCopy}>
-        High in Omega-3 fatty acids. Served with a side of zesty quinoa and roasted almonds.
-      </Text>
-      <View style={styles.dinnerMacroRow}>
-        <DinnerMacro label="CALS" value="520" />
-        <DinnerMacro label="PROTEIN" value="38g" />
-        <DinnerMacro label="FAT" value="24g" />
-      </View>
-    </View>
-  );
-}
-
-function DinnerMacro({ label, value }: { label: string; value: string }) {
-  const color = nutritionColors[label as keyof typeof nutritionColors] ?? colors.primary;
-
-  return (
-    <View style={styles.dinnerMacro}>
-      <Text style={[styles.dinnerMacroLabel, { color }]}>{label}</Text>
-      <Text style={[styles.dinnerMacroValue, { color }]}>{value}</Text>
-    </View>
-  );
-}
-
-function HydrationLogCard() {
-  return (
-    <View style={styles.hydrationCard}>
-      <View style={styles.logMealHeader}>
-        <View style={[styles.mealIconCircle, { backgroundColor: '#BFDAFF' }]}>
-          <SvgIcon color="#1D7BE3" height={15} source={svgIcons.water} width={12} />
-        </View>
-        <Text style={styles.hydrationTitle}>Hydration</Text>
-      </View>
-      <Text style={styles.hydrationValue}>
-        1.8 <Text style={styles.hydrationGoal}>/ 3.0L</Text>
-      </Text>
-      <View style={styles.hydrationDots}>
-        {[1, 2, 3, 4, 5].map((item) => (
-          <View key={item} style={[styles.hydrationDot, item <= 3 && styles.hydrationDotActive]} />
-        ))}
-      </View>
     </View>
   );
 }
@@ -478,25 +201,44 @@ function HomeContent() {
   );
 }
 
-function CalorieRing() {
-  const consumedPercent = Math.round(calorieProgress * 100);
-  const progressDegrees = calorieProgress * 360;
-  const webRingStyle =
-    Platform.OS === 'web'
-      ? ({
-          backgroundImage: `conic-gradient(${colors.primaryMid} 0deg ${progressDegrees}deg, #EDF1FF ${progressDegrees}deg 360deg)`,
-        } as object)
-      : null;
+function CalorieRing({ summary = calorieSummary }: { summary?: CalorieSummary }) {
+  const size = 270;
+  const strokeWidth = 24;
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const { left, leftPercent, leftProgress } = getCalorieRingMetrics(summary);
+  const strokeDashoffset = circumference * (1 - leftProgress);
 
   return (
     <View style={styles.ringWrap}>
-      <View style={[styles.ringProgress, webRingStyle]}>
-        <View style={styles.ringHole} />
-      </View>
+      <Svg height={size} style={styles.ringSvg} width={size}>
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          fill="transparent"
+          r={radius}
+          stroke="#EDF1FF"
+          strokeWidth={strokeWidth}
+        />
+        <Circle
+          cx={size / 2}
+          cy={size / 2}
+          fill="transparent"
+          originX={size / 2}
+          originY={size / 2}
+          r={radius}
+          rotation="-90"
+          stroke={colors.primaryMid}
+          strokeDasharray={`${circumference} ${circumference}`}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          strokeWidth={strokeWidth}
+        />
+      </Svg>
       <View style={styles.ringCenter}>
-        <Text style={styles.ringNumber}>{caloriesLeft.toLocaleString()}</Text>
+        <Text style={styles.ringNumber}>{left.toLocaleString()}</Text>
         <Text style={styles.ringLabel}>KCAL LEFT</Text>
-        <Text style={styles.ringPercent}>{consumedPercent}% consumed</Text>
+        <Text style={styles.ringPercent}>{leftPercent}% left</Text>
       </View>
     </View>
   );
@@ -610,17 +352,6 @@ function WeeklyOverview() {
           );
         })}
       </View>
-    </View>
-  );
-}
-
-function PlaceholderPage({ tab }: { tab: AppTab }) {
-  return (
-    <View style={styles.placeholder}>
-      <Text style={styles.placeholderTitle}>{tab}</Text>
-      <Text style={styles.placeholderCopy}>
-        This tab is wired and clickable. The screen content can be expanded from the same reusable layout.
-      </Text>
     </View>
   );
 }
@@ -914,7 +645,7 @@ const styles = StyleSheet.create({
   },
   dinnerImage: {
     height: '100%',
-    resizeMode: 'contain',
+    resizeMode: 'cover',
     width: '100%',
   },
   dinnerImageFrame: {
@@ -1371,12 +1102,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'absolute',
   },
-  ringHole: {
-    backgroundColor: colors.background,
-    borderRadius: 111,
-    height: 222,
-    width: 222,
-  },
   ringLabel: {
     color: colors.inkMuted,
     ...font.semiBold,
@@ -1396,14 +1121,8 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: spacing.sm,
   },
-  ringProgress: {
-    alignItems: 'center',
-    backgroundColor: colors.primaryMid,
-    borderRadius: 135,
-    height: 270,
-    justifyContent: 'center',
+  ringSvg: {
     position: 'absolute',
-    width: 270,
   },
   ringWrap: {
     alignItems: 'center',
