@@ -1,6 +1,8 @@
 export const svgIcons = {
   add:
     '<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 8H0V6H6V0H8V6H14V8H8V14H6V8Z" fill="#006C49"/></svg>',
+  shoppingBag:
+    '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 9V6C16 3.79086 14.2091 2 12 2C9.79086 2 8 3.79086 8 6V9M3 8H21L20 22H4L3 8Z" stroke="#006C49" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   aiInsight:
     '<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 8L16.75 5.25L14 4L16.75 2.75L18 0L19.25 2.75L22 4L19.25 5.25L18 8ZM18 22L16.75 19.25L14 18L16.75 16.75L18 14L19.25 16.75L22 18L19.25 19.25L18 22ZM8 19L5.5 13.5L0 11L5.5 8.5L8 3L10.5 8.5L16 11L10.5 13.5L8 19Z" fill="#006C49"/></svg>',
   breakfast:
