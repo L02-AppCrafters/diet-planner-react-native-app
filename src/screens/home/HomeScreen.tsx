@@ -104,13 +104,15 @@ function getCalorieRingMetrics(summary: CalorieSummary) {
 export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack'>('log');
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
+  const headerTitle =
+    isAddSnack ? 'Add Snack' : activeTab === 'Log' ? 'Weekly Plan' : activeTab === 'Recipes' ? 'Recipes' : 'Nutri Planner';
 
   return (
     <View style={styles.viewport}>
       <View style={styles.phone}>
         <Header
           onBack={isAddSnack ? () => setLogRoute('log') : undefined}
-          title={isAddSnack ? 'Add Snack' : activeTab === 'Log' ? 'Weekly Plan' : 'Nutri Planner'}
+          title={headerTitle}
         />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {activeTab === 'Home' ? <HomeContent /> : null}

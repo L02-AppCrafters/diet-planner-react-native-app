@@ -1,7 +1,7 @@
-const featuredImage = require('../../assets/lunch.png');
-const bowlImage = require('../../assets/log-lunch-new.png');
-const salmonImage = require('../../assets/log-dinner-new.png');
-const berryImage = require('../../assets/log-breakfast-new.png');
+const featuredImage = require('../../assets/mediterranean-salad.png');
+const bowlImage = require('../../assets/vegan-buddha-bowl.png');
+const salmonImage = require('../../assets/grass-fed-steak-with-garlic-asparagus.png');
+const berryImage = require('../../assets/antioxidant-berry-and-whey-power-bowl.png');
 
 export const recipeFilters = ['All Recipes', 'Keto', 'Vegan', 'High Protein'];
 
@@ -10,7 +10,7 @@ export const featuredRecipe = {
   title: 'Zesty Atlantic Salmon & Quinoa Power Bowl',
   time: '25 mins',
   calories: '420 kcal',
-  protein: '32g protein',
+  protein: '32g Protein',
   image: featuredImage,
 };
 
@@ -20,6 +20,7 @@ export const recipeCards = [
     tag: 'VEGAN',
     title: 'Spiced Chickpea & Avocado Buddha Bowl',
     time: '15m',
+    calories: '320 kcal',
     protein: '14g',
     image: bowlImage,
   },
@@ -28,6 +29,7 @@ export const recipeCards = [
     tag: 'KETO',
     title: 'Grass-Fed Steak with Garlic Asparagus',
     time: '20m',
+    calories: '480 kcal',
     protein: '42g',
     image: salmonImage,
   },
@@ -36,6 +38,7 @@ export const recipeCards = [
     tag: 'HIGH PROTEIN',
     title: 'Antioxidant Berry & Whey Power Bowl',
     time: '5m',
+    calories: '310 kcal',
     protein: '28g',
     image: berryImage,
   },
