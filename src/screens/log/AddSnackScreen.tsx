@@ -33,7 +33,13 @@ const scanBarcodeBackground = require('../../../assets/scan-barcode-background.p
 
 type MealTab = 'Breakfast' | 'Lunch' | 'Dinner';
 
-export function AddSnackScreen({ onOpenIngredients }: { onOpenIngredients?: () => void }) {
+export function AddSnackScreen({
+  onLogMeal,
+  onOpenDetail,
+}: {
+  onLogMeal?: () => void;
+  onOpenDetail?: () => void;
+}) {
   const [searchText, setSearchText] = useState('');
   const [activeMeal, setActiveMeal] = useState<MealTab>('Breakfast');
 
@@ -95,21 +101,35 @@ export function AddSnackScreen({ onOpenIngredients }: { onOpenIngredients?: () =
         <Text style={styles.viewHistory}>View History</Text>
       </View>
 
-      <Pressable onPress={onOpenIngredients} style={styles.recentHeroCard}>
+      <Pressable onPress={onOpenDetail} style={styles.recentHeroCard}>
         <View style={styles.recentRail} />
         <Image source={avocadoToastImage} style={styles.recentImage} />
         <View style={styles.recentCopy}>
           <Text style={styles.recentTitle}>Avocado Toast</Text>
           <Text style={styles.recentMeta}>280 kcal {'\u2022'} Artisan Pantry</Text>
         </View>
-        <Pressable style={styles.recentAddButton}>
+        <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.recentAddButton}>
           <Text style={styles.recentAddText}>+</Text>
         </Pressable>
       </Pressable>
 
       <View style={styles.recentGrid}>
-        <SmallRecentCard accent="#0B6BD3" calories="120 kcal" image={greekYogurtImage} onPress={onOpenIngredients} title="Greek Yogurt" />
-        <SmallRecentCard accent={colors.primaryMid} calories="45 kcal" image={matchaLatteImage} onPress={onOpenIngredients} title="Matcha Latte" />
+        <SmallRecentCard
+          accent="#0B6BD3"
+          calories="120 kcal"
+          image={greekYogurtImage}
+          onLogMeal={onLogMeal}
+          onPress={onOpenDetail}
+          title="Greek Yogurt"
+        />
+        <SmallRecentCard
+          accent={colors.primaryMid}
+          calories="45 kcal"
+          image={matchaLatteImage}
+          onLogMeal={onLogMeal}
+          onPress={onOpenDetail}
+          title="Matcha Latte"
+        />
       </View>
 
       <View style={styles.recommendationCard}>
@@ -151,12 +171,14 @@ function SmallRecentCard({
   accent,
   calories,
   image,
+  onLogMeal,
   onPress,
   title,
 }: {
   accent: string;
   calories: string;
   image: ImageSourcePropType;
+  onLogMeal?: () => void;
   onPress?: () => void;
   title: string;
 }) {
@@ -168,7 +190,7 @@ function SmallRecentCard({
         <Text style={styles.smallRecentTitle}>{title}</Text>
         <Text style={styles.smallRecentCalories}>{calories}</Text>
       </View>
-      <Pressable style={styles.smallRecentButton}>
+      <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.smallRecentButton}>
         <Text style={styles.smallRecentButtonText}>Log</Text>
       </Pressable>
     </Pressable>

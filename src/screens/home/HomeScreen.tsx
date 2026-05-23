@@ -5,6 +5,7 @@ import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
 import { macros } from '../../data/dailyTracker';
 import { AddSnackScreen } from '../log/AddSnackScreen';
+import { FoodNutritionDetail, FoodNutritionHeader } from '../log/FoodNutritionDetail';
 import { LogScreen } from '../log/LogScreen';
 import { MainIngredientsScreen } from '../log/MainIngredientsScreen';
 import { ProgressScreen } from '../progress/ProgressScreen';
@@ -103,12 +104,18 @@ function getCalorieRingMetrics(summary: CalorieSummary) {
 }
 
 export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
-  const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients'>('log');
+  const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
+  const logMealAndReturnToPlan = () => {
+    setLogRoute('log');
+  };
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
   const isMainIngredients = activeTab === 'Log' && logRoute === 'mainIngredients';
+  const isFoodNutritionDetail = activeTab === 'Log' && logRoute === 'foodNutritionDetail';
   const headerTitle =
     isMainIngredients
       ? 'Main Ingredients'
+      : isFoodNutritionDetail
+      ? 'Food Nutrition Detail'
       : isAddSnack
       ? 'Add Snack'
       : activeTab === 'Log'
@@ -122,15 +129,33 @@ export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
   return (
     <View style={styles.viewport}>
       <View style={styles.phone}>
-        <Header
-          onBack={isMainIngredients ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
-          title={headerTitle}
-        />
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {isFoodNutritionDetail ? (
+          <FoodNutritionHeader onBack={() => setLogRoute('addSnack')} />
+        ) : (
+          <Header
+            onBack={isMainIngredients ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
+            title={headerTitle}
+          />
+        )}
+        <ScrollView
+          contentContainerStyle={[styles.scrollContent, isFoodNutritionDetail && styles.detailScrollContent]}
+          showsVerticalScrollIndicator={false}
+        >
           {activeTab === 'Home' ? <HomeContent /> : null}
           {activeTab === 'Log' && logRoute === 'log' ? <LogScreen onAddSnack={() => setLogRoute('addSnack')} /> : null}
-          {isAddSnack ? <AddSnackScreen onOpenIngredients={() => setLogRoute('mainIngredients')} /> : null}
+          {isAddSnack ? (
+            <AddSnackScreen
+              onLogMeal={logMealAndReturnToPlan}
+              onOpenDetail={() => setLogRoute('foodNutritionDetail')}
+            />
+          ) : null}
           {isMainIngredients ? <MainIngredientsScreen /> : null}
+          {isFoodNutritionDetail ? (
+            <FoodNutritionDetail
+              onAddToLog={logMealAndReturnToPlan}
+              onEditIngredients={() => setLogRoute('mainIngredients')}
+            />
+          ) : null}
           {activeTab === 'Recipes' ? <RecipesScreen /> : null}
           {activeTab === 'Progress' ? <ProgressScreen /> : null}
         </ScrollView>
@@ -156,10 +181,12 @@ function Header({ onBack, title }: { onBack?: () => void; title: string }) {
           <Text style={styles.backIcon}>‹</Text>
         </Pressable>
       ) : null}
-      <View style={styles.avatar}>
-        <View style={styles.avatarHead} />
-        <View style={styles.avatarBody} />
-      </View>
+      {!onBack ? (
+        <View style={styles.avatar}>
+          <View style={styles.avatarHead} />
+          <View style={styles.avatarBody} />
+        </View>
+      ) : null}
       <Text style={styles.logo}>{title}</Text>
       <Pressable accessibilityLabel="Open settings" style={styles.gearButton}>
         <SvgIcon height={20} source={svgIcons.settings} width={21} />
@@ -1217,6 +1244,9 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 132,
     paddingHorizontal: 25,
+  },
+  detailScrollContent: {
+    paddingHorizontal: 0,
   },
   scanCard: {
     alignItems: 'center',
