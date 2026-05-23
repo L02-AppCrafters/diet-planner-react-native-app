@@ -33,7 +33,7 @@ const scanBarcodeBackground = require('../../../assets/scan-barcode-background.p
 
 type MealTab = 'Breakfast' | 'Lunch' | 'Dinner';
 
-export function AddSnackScreen() {
+export function AddSnackScreen({ onOpenIngredients }: { onOpenIngredients?: () => void }) {
   const [searchText, setSearchText] = useState('');
   const [activeMeal, setActiveMeal] = useState<MealTab>('Breakfast');
 
@@ -95,7 +95,7 @@ export function AddSnackScreen() {
         <Text style={styles.viewHistory}>View History</Text>
       </View>
 
-      <View style={styles.recentHeroCard}>
+      <Pressable onPress={onOpenIngredients} style={styles.recentHeroCard}>
         <View style={styles.recentRail} />
         <Image source={avocadoToastImage} style={styles.recentImage} />
         <View style={styles.recentCopy}>
@@ -105,11 +105,11 @@ export function AddSnackScreen() {
         <Pressable style={styles.recentAddButton}>
           <Text style={styles.recentAddText}>+</Text>
         </Pressable>
-      </View>
+      </Pressable>
 
       <View style={styles.recentGrid}>
-        <SmallRecentCard accent="#0B6BD3" calories="120 kcal" image={greekYogurtImage} title="Greek Yogurt" />
-        <SmallRecentCard accent={colors.primaryMid} calories="45 kcal" image={matchaLatteImage} title="Matcha Latte" />
+        <SmallRecentCard accent="#0B6BD3" calories="120 kcal" image={greekYogurtImage} onPress={onOpenIngredients} title="Greek Yogurt" />
+        <SmallRecentCard accent={colors.primaryMid} calories="45 kcal" image={matchaLatteImage} onPress={onOpenIngredients} title="Matcha Latte" />
       </View>
 
       <View style={styles.recommendationCard}>
@@ -151,15 +151,17 @@ function SmallRecentCard({
   accent,
   calories,
   image,
+  onPress,
   title,
 }: {
   accent: string;
   calories: string;
   image: ImageSourcePropType;
+  onPress?: () => void;
   title: string;
 }) {
   return (
-    <View style={styles.smallRecentCard}>
+    <Pressable onPress={onPress} style={styles.smallRecentCard}>
       <View style={[styles.smallRecentRail, { backgroundColor: accent }]} />
       <Image source={image} style={styles.smallRecentImage} />
       <View style={styles.smallRecentCopy}>
@@ -169,7 +171,7 @@ function SmallRecentCard({
       <Pressable style={styles.smallRecentButton}>
         <Text style={styles.smallRecentButtonText}>Log</Text>
       </Pressable>
-    </View>
+    </Pressable>
   );
 }
 

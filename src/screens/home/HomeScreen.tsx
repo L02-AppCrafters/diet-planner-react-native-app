@@ -6,6 +6,7 @@ import { SvgIcon } from '../../components/ui/SvgIcon';
 import { macros } from '../../data/dailyTracker';
 import { AddSnackScreen } from '../log/AddSnackScreen';
 import { LogScreen } from '../log/LogScreen';
+import { MainIngredientsScreen } from '../log/MainIngredientsScreen';
 import { ProgressScreen } from '../progress/ProgressScreen';
 import { RecipesScreen } from '../recipes/RecipesScreen';
 import { colors } from '../../theme/colors';
@@ -102,10 +103,13 @@ function getCalorieRingMetrics(summary: CalorieSummary) {
 }
 
 export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
-  const [logRoute, setLogRoute] = useState<'log' | 'addSnack'>('log');
+  const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients'>('log');
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
+  const isMainIngredients = activeTab === 'Log' && logRoute === 'mainIngredients';
   const headerTitle =
-    isAddSnack
+    isMainIngredients
+      ? 'Main Ingredients'
+      : isAddSnack
       ? 'Add Snack'
       : activeTab === 'Log'
         ? 'Weekly Plan'
@@ -119,13 +123,14 @@ export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
     <View style={styles.viewport}>
       <View style={styles.phone}>
         <Header
-          onBack={isAddSnack ? () => setLogRoute('log') : undefined}
+          onBack={isMainIngredients ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
           title={headerTitle}
         />
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {activeTab === 'Home' ? <HomeContent /> : null}
           {activeTab === 'Log' && logRoute === 'log' ? <LogScreen onAddSnack={() => setLogRoute('addSnack')} /> : null}
-          {isAddSnack ? <AddSnackScreen /> : null}
+          {isAddSnack ? <AddSnackScreen onOpenIngredients={() => setLogRoute('mainIngredients')} /> : null}
+          {isMainIngredients ? <MainIngredientsScreen /> : null}
           {activeTab === 'Recipes' ? <RecipesScreen /> : null}
           {activeTab === 'Progress' ? <ProgressScreen /> : null}
         </ScrollView>
