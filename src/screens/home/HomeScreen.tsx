@@ -105,7 +105,15 @@ export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack'>('log');
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
   const headerTitle =
-    isAddSnack ? 'Add Snack' : activeTab === 'Log' ? 'Weekly Plan' : activeTab === 'Recipes' ? 'Recipes' : 'Nutri Planner';
+    isAddSnack
+      ? 'Add Snack'
+      : activeTab === 'Log'
+        ? 'Weekly Plan'
+        : activeTab === 'Recipes'
+          ? 'Recipes'
+          : activeTab === 'Progress'
+            ? 'Analytics'
+            : 'Nutri Planner';
 
   return (
     <View style={styles.viewport}>
