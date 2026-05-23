@@ -77,6 +77,7 @@ const font = {
 type HomeScreenProps = {
   activeTab: AppTab;
   onTabChange: (tab: AppTab) => void;
+  onOpenSettings?: () => void;
 };
 
 type CalorieSummary = {
@@ -103,7 +104,7 @@ function getCalorieRingMetrics(summary: CalorieSummary) {
   };
 }
 
-export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
+export function HomeScreen({ activeTab, onOpenSettings, onTabChange }: HomeScreenProps) {
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
   const logMealAndReturnToPlan = () => {
     setLogRoute('log');
@@ -134,6 +135,7 @@ export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
         ) : (
           <Header
             onBack={isMainIngredients ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
+            onOpenSettings={onOpenSettings}
             title={headerTitle}
           />
         )}
@@ -173,7 +175,15 @@ export function HomeScreen({ activeTab, onTabChange }: HomeScreenProps) {
   );
 }
 
-function Header({ onBack, title }: { onBack?: () => void; title: string }) {
+function Header({
+  onBack,
+  title,
+  onOpenSettings,
+}: {
+  onBack?: () => void;
+  title: string;
+  onOpenSettings?: () => void;
+}) {
   return (
     <View style={styles.header}>
       {onBack ? (
@@ -188,7 +198,7 @@ function Header({ onBack, title }: { onBack?: () => void; title: string }) {
         </View>
       ) : null}
       <Text style={styles.logo}>{title}</Text>
-      <Pressable accessibilityLabel="Open settings" style={styles.gearButton}>
+      <Pressable accessibilityLabel="Open settings" onPress={onOpenSettings} style={styles.gearButton}>
         <SvgIcon height={20} source={svgIcons.settings} width={21} />
       </Pressable>
     </View>
