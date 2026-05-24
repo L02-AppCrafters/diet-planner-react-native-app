@@ -71,6 +71,18 @@ function parseStoredNumber(value: string | null, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function mapUserToProfile(user: Awaited<ReturnType<ApiClient['me']>>, fallback: UserProfile): UserProfile {
+  return {
+    ...fallback,
+    activityLevel: user.activityLevel ?? fallback.activityLevel,
+    age: user.age ?? fallback.age,
+    goal: user.goal ?? fallback.goal,
+    height: parseStoredNumber(user.height, fallback.height),
+    tdee: user.calories ?? fallback.tdee,
+    weight: parseStoredNumber(user.weight, fallback.weight),
+  };
+}
+
 export default function App() {
   const [currentFlow, setCurrentFlow] = useState<AppFlow>('OnboardingGoal');
   const [activeTab, setActiveTab] = useState<AppTab>('Home');
@@ -163,15 +175,7 @@ export default function App() {
             return;
           }
 
-          setProfile((prev) => ({
-            ...prev,
-            activityLevel: user.activityLevel ?? prev.activityLevel,
-            age: user.age ?? prev.age,
-            goal: user.goal ?? prev.goal,
-            height: parseStoredNumber(user.height, prev.height),
-            tdee: user.calories ?? prev.tdee,
-            weight: parseStoredNumber(user.weight, prev.weight),
-          }));
+          setProfile((prev) => mapUserToProfile(user, prev));
           setCurrentFlow('MainApp');
         }
       } catch {
@@ -282,12 +286,31 @@ export default function App() {
     });
   };
 
-  const finishAuthentication = async (authAction: () => Promise<void>) => {
+  const finishLogin = async (email: string, password: string) => {
     setAuthError('');
     setIsAuthSubmitting(true);
 
     try {
-      await authAction();
+      await api.login(email, password);
+      await refreshProfileFromBackend();
+      setCurrentFlow('MainApp');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setAuthError(error.message);
+      } else {
+        setAuthError('Could not connect to the server. Please check that the backend is running.');
+      }
+    } finally {
+      setIsAuthSubmitting(false);
+    }
+  };
+
+  const finishRegistration = async (email: string, password: string) => {
+    setAuthError('');
+    setIsAuthSubmitting(true);
+
+    try {
+      await api.register(email, password);
       await syncProfileToBackend();
       setCurrentFlow('MainApp');
     } catch (error) {
@@ -301,8 +324,52 @@ export default function App() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // Local logout should still complete if the server is unavailable.
+    }
+
+    accessTokenRef.current = null;
+    api.setRefreshToken(null);
+    await Promise.all([
+      tokenStorage.deleteItem(ACCESS_TOKEN_KEY),
+      tokenStorage.deleteItem(REFRESH_TOKEN_KEY),
+    ]);
+    setTodayLog(null);
+    setWeeklyLogs([]);
+    setMealPlans([]);
+    setWeeklyMealPlans([]);
+    setRecipes([]);
+    setActiveTab('Home');
+    setCurrentFlow('Auth');
+  };
+
   const selectedDailyLog = weeklyLogs.find((log) => log.logDate === selectedLogDate) ?? null;
   const homeMetrics = buildHomeMetrics(profile, todayLog, weeklyLogs);
+  const refreshProfileFromBackend = async () => {
+    const user = await api.me();
+    let nextProfile = profile;
+
+    setProfile((prev) => {
+      nextProfile = mapUserToProfile(user, prev);
+      return nextProfile;
+    });
+
+    return nextProfile;
+  };
+  const openBodyProfileSettings = async () => {
+    if (accessTokenRef.current) {
+      try {
+        await refreshProfileFromBackend();
+      } catch {
+        // Keep the in-memory profile if a refresh fails; the editor still opens.
+      }
+    }
+
+    setCurrentFlow('OnboardingProfile');
+  };
   const selectLogDate = async (date: string) => {
     setSelectedLogDate(date);
     setMealPlans(await api.getMealPlans(date));
@@ -370,6 +437,31 @@ export default function App() {
     setWeeklyMealPlans(latestWeeklyMealPlans);
     showSuccessToast('Meal added to log');
   };
+  const updateUserRecipe = async (recipe: Recipe) => {
+    const input = {
+      imageUrl: recipe.imageUrl,
+      jsonData: recipe.jsonData,
+      recipeName: recipe.recipeName,
+    };
+    const updatedRecipe = recipe.isDefault
+      ? await api.createRecipe(input)
+      : await api.updateRecipe(recipe.id, input);
+    const recipeRows = await api.getRecipes();
+
+    setRecipes(recipeRows);
+    showSuccessToast(recipe.isDefault ? 'Private recipe copy created' : 'Recipe updated');
+    return updatedRecipe;
+  };
+  const deleteUserRecipe = async (recipe: Recipe) => {
+    if (recipe.isDefault) {
+      showSuccessToast('Default recipes cannot be deleted');
+      return;
+    }
+
+    await api.deleteRecipe(recipe.id);
+    setRecipes(await api.getRecipes());
+    showSuccessToast('Recipe deleted');
+  };
 
   // 1. Luồng chọn Goal Onboarding
   if (currentFlow === 'OnboardingGoal') {
@@ -387,7 +479,9 @@ export default function App() {
   if (currentFlow === 'OnboardingProfile') {
     return (
       <BodyProfileScreen
+        key={`${profile.height}-${profile.weight}-${profile.age}-${profile.activityLevel}`}
         initialProfile={profile}
+        onLogout={accessTokenRef.current ? handleLogout : undefined}
         onUpdateProfile={async (updatedProfile) => {
           const initialHistory = buildInitialWeightHistory(updatedProfile.weight);
           const nextProfile = {
@@ -424,12 +518,8 @@ export default function App() {
         error={authError}
         isSubmitting={isAuthSubmitting}
         onBack={() => setCurrentFlow('OnboardingProfile')}
-        onLogin={(email, password) => finishAuthentication(async () => {
-          await api.login(email, password);
-        })}
-        onRegister={(email, password) => finishAuthentication(async () => {
-          await api.register(email, password);
-        })}
+        onLogin={finishLogin}
+        onRegister={finishRegistration}
       />
     );
   }
@@ -479,12 +569,16 @@ export default function App() {
         metrics={homeMetrics}
         onAddRecipeToLog={addRecipeToLog}
         onAddWater={addWater}
+        onDeleteRecipe={deleteUserRecipe}
+        onUpdateRecipe={updateUserRecipe}
+        profileWeight={profile.weight}
         recipes={recipes}
         weeklyMealPlans={weeklyMealPlans}
+        weeklyLogs={weeklyLogs}
         selectedLogDate={selectedLogDate}
         onSelectLogDate={selectLogDate}
         onTabChange={setActiveTab}
-        onOpenSettings={() => setCurrentFlow('OnboardingProfile')}
+        onOpenSettings={openBodyProfileSettings}
       />
       {toastMessage ? <SuccessToast message={toastMessage} /> : null}
     </SafeAreaView>

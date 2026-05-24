@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { Image, ImageSourcePropType, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
-import { DailyLog, MealPlan } from '../../services/api';
+import { DailyLog, MealPlan, Recipe } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
@@ -55,7 +55,8 @@ export function LogScreen({
   const visibleMealPlans = mealPlans.slice().sort(sortMealPlans);
   const normalizedCalorieGoal = Math.max(calorieGoal, 1);
   const calories = dailyLog?.calories ?? 0;
-  const plannedPercent = Math.min(Math.round((calories / normalizedCalorieGoal) * 100), 100);
+  const plannedPercent = Math.round((Math.max(calories, 0) / normalizedCalorieGoal) * 100);
+  const plannedFillPercent = Math.min(plannedPercent, 100);
 
   useEffect(() => {
     const activeIndex = dateCards.findIndex((item) => item.active);
@@ -79,7 +80,7 @@ export function LogScreen({
           <Text style={styles.plannedBadge}>{plannedPercent}% Planned</Text>
         </View>
         <View style={styles.energyTrack}>
-          <View style={[styles.energyFill, { width: `${plannedPercent}%` }]} />
+          <View style={[styles.energyFill, { width: `${plannedFillPercent}%` }]} />
         </View>
       </View>
 
@@ -116,12 +117,13 @@ export function LogScreen({
 
       {visibleMealPlans.map((mealPlan) => {
         const card = buildMealLogCard(mealPlan);
+        const detailRecipe = buildMealPlanDetailRecipe(mealPlan);
 
         return (
           <MealLogCard
             key={mealPlan.id}
             {...card}
-            onPress={mealPlan.recipe ? () => onOpenRecipe(mealPlan.recipe as NonNullable<MealPlan['recipe']>) : undefined}
+            onPress={detailRecipe ? () => onOpenRecipe(detailRecipe) : undefined}
           />
         );
       })}
@@ -227,22 +229,26 @@ function HydrationLogCard({ waterMl }: { waterMl: number }) {
 function buildMealLogCard(mealPlan: MealPlan): MealLogCardProps {
   const recipe = mealPlan.recipe;
   const food = mealPlan.foodNutrition;
+  const snapshotJson = mealPlan.snapshotJsonData;
+  const snapshotName = mealPlan.snapshotRecipeName;
+  const snapshotImageUrl = mealPlan.snapshotImageUrl;
   const mealMeta = getMealMeta(mealPlan.mealType);
   const servings = Number(mealPlan.servings) || 1;
-  const calories = Math.round(((recipe?.jsonData.calories ?? food?.calories ?? 0) * servings));
-  const proteins = Math.round(((recipe?.jsonData.proteins ?? food?.proteins ?? 0) * servings));
-  const carbs = Math.round(((recipe?.jsonData.carbs ?? food?.carbohydrates ?? 0) * servings));
-  const fats = Math.round(((recipe?.jsonData.fats ?? food?.fats ?? 0) * servings));
+  const calories = Math.round(((snapshotJson?.calories ?? recipe?.jsonData.calories ?? food?.calories ?? 0) * servings));
+  const proteins = Math.round(((snapshotJson?.proteins ?? recipe?.jsonData.proteins ?? food?.proteins ?? 0) * servings));
+  const carbs = Math.round(((snapshotJson?.carbs ?? recipe?.jsonData.carbs ?? food?.carbohydrates ?? 0) * servings));
+  const fats = Math.round(((snapshotJson?.fats ?? recipe?.jsonData.fats ?? food?.fats ?? 0) * servings));
 
   return {
     description:
+      snapshotJson?.description ??
       recipe?.jsonData.description ??
       (food ? `${food.servingSize} serving from your nutrition database.` : 'Logged meal from your meal plan.'),
     iconBg: mealMeta.iconBg,
     iconHeight: mealMeta.iconHeight,
     iconSource: mealMeta.iconSource,
     iconWidth: mealMeta.iconWidth,
-    image: recipe?.imageUrl || food?.imageUrl ? { uri: recipe?.imageUrl ?? food?.imageUrl ?? '' } : mealMeta.fallbackImage,
+    image: snapshotImageUrl || recipe?.imageUrl || food?.imageUrl ? { uri: snapshotImageUrl ?? recipe?.imageUrl ?? food?.imageUrl ?? '' } : mealMeta.fallbackImage,
     macros: [
       { label: 'CALS', value: String(calories) },
       { label: 'PROTEIN', value: `${proteins}g` },
@@ -250,8 +256,29 @@ function buildMealLogCard(mealPlan: MealPlan): MealLogCardProps {
       { label: 'FAT', value: `${fats}g` },
     ],
     time: formatTime(mealPlan.createdAt),
-    title: recipe?.jsonData.recipeName ?? recipe?.recipeName ?? food?.name ?? 'Logged Meal',
+    title: snapshotJson?.recipeName ?? snapshotName ?? recipe?.jsonData.recipeName ?? recipe?.recipeName ?? food?.name ?? 'Logged Meal',
     type: titleCase(mealPlan.mealType),
+  };
+}
+
+function buildMealPlanDetailRecipe(mealPlan: MealPlan): Recipe | null {
+  if (mealPlan.recipe) {
+    return mealPlan.recipe;
+  }
+
+  if (!mealPlan.snapshotJsonData || !mealPlan.snapshotRecipeName || !mealPlan.snapshotImageUrl) {
+    return null;
+  }
+
+  return {
+    createdAt: mealPlan.createdAt,
+    id: mealPlan.recipeId ?? mealPlan.id,
+    imageUrl: mealPlan.snapshotImageUrl,
+    isDefault: true,
+    jsonData: mealPlan.snapshotJsonData,
+    recipeName: mealPlan.snapshotJsonData.recipeName ?? mealPlan.snapshotRecipeName,
+    uid: null,
+    updatedAt: mealPlan.updatedAt,
   };
 }
 

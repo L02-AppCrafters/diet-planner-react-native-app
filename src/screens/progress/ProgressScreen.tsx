@@ -1,77 +1,94 @@
-import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
-import {
-  activityStreak,
-  bodyFat,
-  nutrientAdherence,
-  weeklyCaloriesAverage,
-  weightPoints,
-  weightSummary,
-} from '../../data/progress';
+import { DailyLog } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
 
 const font = {
   regular: { fontFamily: fontFamily.regular, fontWeight: undefined },
-  medium: { fontFamily: fontFamily.medium, fontWeight: undefined },
   semiBold: { fontFamily: fontFamily.semiBold, fontWeight: undefined },
   bold: { fontFamily: fontFamily.bold, fontWeight: undefined },
   manropeBold: { fontFamily: fontFamily.manropeBold, fontWeight: undefined },
   manropeExtraBold: { fontFamily: fontFamily.manropeExtraBold, fontWeight: undefined },
 } as const;
 
-const days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+const compactDayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const chartWidth = 300;
 const chartHeight = 160;
+const waterGoalMl = 2500;
 
-export function ProgressScreen() {
+type ProgressScreenProps = {
+  calorieGoal: number;
+  carbsGoal: number;
+  fatsGoal: number;
+  profileWeight: number;
+  proteinGoal: number;
+  weeklyLogs: DailyLog[];
+};
+
+type WeekDayMetric = {
+  date: string;
+  log: DailyLog | null;
+};
+
+type NutrientItem = {
+  color: string;
+  label: 'Protein' | 'Carbs' | 'Fats';
+  percent: number;
+};
+
+export function ProgressScreen({
+  calorieGoal,
+  carbsGoal,
+  fatsGoal,
+  profileWeight,
+  proteinGoal,
+  weeklyLogs,
+}: ProgressScreenProps) {
+  const analytics = buildAnalytics({
+    calorieGoal,
+    carbsGoal,
+    fatsGoal,
+    profileWeight,
+    proteinGoal,
+    weeklyLogs,
+  });
+
   return (
     <View style={styles.container}>
-      <Text style={styles.pageTitle}>Your Performance</Text>
-      <Text style={styles.pageSubtitle}>Consistency is the secret to lasting results.</Text>
-      <WeightCard />
-      <ActivityCard />
-      <WeeklyCaloriesCard />
-      <BodyFatCard />
+      <Text style={styles.pageTitle}>Analytics</Text>
+      <Text style={styles.pageSubtitle}>Weekly stats are calculated from Monday to Sunday.</Text>
+      <WeightCard analytics={analytics} />
+      <ActivityCard analytics={analytics} />
+      <WeeklyCaloriesCard analytics={analytics} />
+      <WaterCard analytics={analytics} />
       <Text style={styles.sectionTitle}>Nutrient Adherence</Text>
-      <NutrientAdherenceCard />
+      <NutrientAdherenceCard items={analytics.nutrients} />
     </View>
   );
 }
 
-function WeightCard() {
-  const [range, setRange] = useState<'Week' | 'Month'>('Week');
-
+function WeightCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics> }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{weightSummary.title}</Text>
-        <View style={styles.segmented}>
-          {(['Week', 'Month'] as const).map((item) => (
-            <Pressable
-              key={item}
-              onPress={() => setRange(item)}
-              style={[styles.segmentButton, range === item && styles.segmentButtonActive]}
-            >
-              <Text style={[styles.segmentText, range === item && styles.segmentTextActive]}>{item}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <Text style={styles.cardTitle}>Weight Over Time</Text>
+        <Text style={styles.weekLabel}>THIS WEEK</Text>
       </View>
       <View style={styles.weightRow}>
-        <Text style={styles.weightValue}>{weightSummary.value}</Text>
+        <Text style={styles.weightValue}>{analytics.currentWeight.toFixed(1)} kg</Text>
         <View style={styles.weightDeltaBadge}>
           <SvgIcon height={10} source={svgIcons.downArrow} width={10} />
-          <Text style={styles.weightDeltaText}>{weightSummary.delta}</Text>
+          <Text style={styles.weightDeltaText}>{Math.abs(analytics.weightDelta).toFixed(1)} kg</Text>
         </View>
       </View>
-      <LineChart values={weightPoints} />
+      <LineChart targetLabel={`TARGET ${analytics.targetWeight.toFixed(0)}KG`} values={analytics.weightValues} />
       <View style={styles.chartDays}>
-        {days.map((day) => (
+        {dayLabels.map((day) => (
           <Text key={day} style={styles.chartDay}>
             {day}
           </Text>
@@ -81,14 +98,15 @@ function WeightCard() {
   );
 }
 
-function LineChart({ compact, values }: { compact?: boolean; values: number[] }) {
+function LineChart({ compact, targetLabel, values }: { compact?: boolean; targetLabel?: string; values: number[] }) {
   const width = chartWidth;
   const height = compact ? 122 : chartHeight;
-  const max = Math.max(...values);
-  const min = Math.min(...values);
+  const safeValues = values.length > 1 ? values : [0, 0, 0, 0, 0, 0, 0];
+  const max = Math.max(...safeValues, 1);
+  const min = Math.min(...safeValues);
   const range = Math.max(1, max - min);
-  const points = values.map((value, index) => {
-    const x = 16 + ((width - 32) / (values.length - 1)) * index;
+  const points = safeValues.map((value, index) => {
+    const x = 16 + ((width - 32) / Math.max(safeValues.length - 1, 1)) * index;
     const y = 20 + (height - 44) - ((value - min) / range) * (height - 58);
     return { x, y };
   });
@@ -109,51 +127,58 @@ function LineChart({ compact, values }: { compact?: boolean; values: number[] })
         <Path d={area} fill={`url(#${compact ? 'weeklyArea' : 'weightArea'})`} />
         <Path d={line} fill="none" stroke={colors.primaryMid} strokeLinecap="round" strokeLinejoin="round" strokeWidth="7" />
         {!compact
-          ? points.slice(1, 6).map((point, index) => (
-              <Circle key={`dot-${index}`} cx={point.x} cy={point.y} fill={colors.primary} r={5} stroke={colors.surface} strokeWidth="2" />
+          ? points.map((point, index) => (
+              <Circle key={`dot-${index}`} cx={point.x} cy={point.y} fill={colors.primary} r={4.5} stroke={colors.surface} strokeWidth="2" />
             ))
           : null}
       </Svg>
-      {!compact ? <Text style={styles.chartTarget}>{weightSummary.target}</Text> : null}
+      {!compact && targetLabel ? <Text style={styles.chartTarget}>{targetLabel}</Text> : null}
     </View>
   );
 }
 
-function ActivityCard() {
+function ActivityCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics> }) {
   return (
     <View style={[styles.card, styles.activityCard]}>
       <View style={styles.activityRail} />
       <View style={styles.activityBackgroundIcon}>
         <SvgIcon height={96} source={svgIcons.activityStreak} width={86} />
       </View>
-      <Text style={styles.activityTitle}>{activityStreak.title.toUpperCase()}</Text>
+      <Text style={styles.activityTitle}>ACTIVITY STREAK</Text>
       <View style={styles.activityValueRow}>
-        <Text style={styles.activityValue}>{activityStreak.days}</Text>
+        <Text style={styles.activityValue}>{analytics.activityStreak}</Text>
         <Text style={styles.activityUnit}>Days</Text>
       </View>
       <View style={styles.activityBars}>
-        {Array.from({ length: 7 }).map((_, index) => (
-          <View key={index} style={[styles.activityBar, index >= activityStreak.days && styles.activityBarMuted]} />
+        {analytics.weekDays.map((item, index) => (
+          <View
+            key={item.date}
+            style={[styles.activityBar, (item.log?.calories ?? 0) < analytics.calorieGoal && styles.activityBarMuted]}
+          />
         ))}
       </View>
-      <Text style={styles.activityNote}>{activityStreak.subtitle}</Text>
+      <Text style={styles.activityNote}>
+        {analytics.activityStreak > 0
+          ? `${Math.max(0, 7 - analytics.activityStreak)} days left to complete this week.`
+          : 'Log meals and meet your calorie goal to start a streak.'}
+      </Text>
     </View>
   );
 }
 
-function WeeklyCaloriesCard() {
+function WeeklyCaloriesCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics> }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{weeklyCaloriesAverage.title}</Text>
+        <Text style={styles.cardTitle}>Weekly Calorie Average</Text>
         <View style={styles.weeklyValueWrap}>
-          <Text style={styles.weeklyValue}>{weeklyCaloriesAverage.value}</Text>
-          <Text style={styles.weeklySuffix}>{weeklyCaloriesAverage.suffix}</Text>
+          <Text style={styles.weeklyValue}>{analytics.averageCalories.toLocaleString()}</Text>
+          <Text style={styles.weeklySuffix}>AVG KCAL/DAY</Text>
         </View>
       </View>
-      <LineChart compact values={[1980, 2140, 2020, 2300, 2180, 2400, 2260]} />
+      <LineChart compact values={analytics.calorieValues} />
       <View style={styles.chartDays}>
-        {weeklyCaloriesAverage.days.map((day, index) => (
+        {compactDayLabels.map((day, index) => (
           <Text key={`${day}-${index}`} style={styles.chartDay}>
             {day}
           </Text>
@@ -163,24 +188,26 @@ function WeeklyCaloriesCard() {
   );
 }
 
-function BodyFatCard() {
+function WaterCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics> }) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle}>{bodyFat.title}</Text>
-        <SvgIcon height={18} source={svgIcons.bodyFat} width={18} />
+        <Text style={styles.cardTitle}>Water Intake %</Text>
+        <SvgIcon color={colors.accent} height={18} source={svgIcons.water} width={14} />
       </View>
       <View style={styles.bodyFatRow}>
         <View>
-          <Text style={styles.bodyFatValue}>{bodyFat.value}</Text>
+          <Text style={styles.bodyFatValue}>{analytics.averageWaterPercent}%</Text>
           <View style={styles.bodyFatDeltaRow}>
-            <SvgIcon height={10} source={svgIcons.downArrow} width={10} />
-            <Text style={styles.bodyFatDelta}>{bodyFat.delta}</Text>
+            <SvgIcon color={colors.accent} height={12} source={svgIcons.water} width={10} />
+            <Text style={styles.bodyFatDelta}>{analytics.averageWaterLiters.toFixed(1)}L avg/day</Text>
           </View>
         </View>
-        <HealthRing percent={22.4} />
+        <HealthRing percent={analytics.averageWaterPercent} />
       </View>
-      <Text style={styles.bodyFatNote}>"{bodyFat.note}"</Text>
+      <Text style={styles.bodyFatNote}>
+        Average hydration from Monday to Sunday. Daily target: {(waterGoalMl / 1000).toFixed(1)}L.
+      </Text>
     </View>
   );
 }
@@ -189,7 +216,7 @@ function HealthRing({ percent }: { percent: number }) {
   const size = 112;
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
-  const offset = circumference * (1 - percent / 100);
+  const offset = circumference * (1 - Math.min(percent, 100) / 100);
 
   return (
     <View style={styles.healthRingWrap}>
@@ -210,12 +237,12 @@ function HealthRing({ percent }: { percent: number }) {
           strokeWidth="10"
         />
       </Svg>
-      <Text style={styles.healthText}>{bodyFat.status}</Text>
+      <Text style={styles.healthText}>{Math.min(percent, 100)}%</Text>
     </View>
   );
 }
 
-function NutrientAdherenceCard() {
+function NutrientAdherenceCard({ items }: { items: NutrientItem[] }) {
   const icons = {
     Carbs: svgIcons.caloriesLarge,
     Fats: svgIcons.waterLarge,
@@ -229,15 +256,15 @@ function NutrientAdherenceCard() {
 
   return (
     <View style={styles.nutrientList}>
-      {nutrientAdherence.map((item) => (
+      {items.map((item) => (
         <View key={item.label} style={styles.nutrientCard}>
-          <View style={[styles.nutrientIcon, { backgroundColor: backgrounds[item.label as keyof typeof backgrounds] }]}>
-            <SvgIcon source={icons[item.label as keyof typeof icons]} size={22} />
+          <View style={[styles.nutrientIcon, { backgroundColor: backgrounds[item.label] }]}>
+            <SvgIcon source={icons[item.label]} size={22} />
           </View>
           <View style={styles.nutrientMain}>
             <View style={styles.nutrientTopRow}>
               <Text style={styles.nutrientLabel}>{item.label}</Text>
-              <Text style={styles.nutrientPercent}>{item.percent}%</Text>
+              <Text style={styles.nutrientPercent}>{item.percent}% avg/day</Text>
             </View>
             <View style={styles.nutrientTrack}>
               <View style={[styles.nutrientFill, { backgroundColor: item.color, width: `${Math.min(item.percent, 100)}%` }]} />
@@ -247,6 +274,127 @@ function NutrientAdherenceCard() {
       ))}
     </View>
   );
+}
+
+function buildAnalytics({
+  calorieGoal,
+  carbsGoal,
+  fatsGoal,
+  profileWeight,
+  proteinGoal,
+  weeklyLogs,
+}: ProgressScreenProps) {
+  const safeCalorieGoal = Math.max(calorieGoal, 1);
+  const weekDays = buildWeekDays(weeklyLogs);
+  const calorieValues = weekDays.map((item) => item.log?.calories ?? 0);
+  const weightValues = buildWeightValues(weekDays, profileWeight);
+  const waterValues = weekDays.map((item) => item.log?.waterMl ?? 0);
+  const totalCalories = calorieValues.reduce((sum, value) => sum + value, 0);
+  const totalWater = waterValues.reduce((sum, value) => sum + value, 0);
+  const currentWeight = weightValues[weightValues.length - 1] ?? profileWeight;
+  const firstWeight = weightValues[0] ?? currentWeight;
+
+  return {
+    activityStreak: getCurrentStreak(weekDays, safeCalorieGoal),
+    averageCalories: Math.round(totalCalories / 7),
+    averageWaterLiters: totalWater / 7 / 1000,
+    averageWaterPercent: Math.round((totalWater / (waterGoalMl * 7)) * 100),
+    calorieGoal: safeCalorieGoal,
+    calorieValues,
+    currentWeight,
+    nutrients: [
+      {
+        color: '#16A34A',
+        label: 'Protein',
+        percent: getNutrientPercent(weekDays, 'proteins', proteinGoal),
+      },
+      {
+        color: '#F59E0B',
+        label: 'Carbs',
+        percent: getNutrientPercent(weekDays, 'carbs', carbsGoal),
+      },
+      {
+        color: '#2563EB',
+        label: 'Fats',
+        percent: getNutrientPercent(weekDays, 'fats', fatsGoal),
+      },
+    ] satisfies NutrientItem[],
+    targetWeight: profileWeight,
+    weekDays,
+    weightDelta: currentWeight - firstWeight,
+    weightValues,
+  };
+}
+
+function buildWeekDays(weeklyLogs: DailyLog[]): WeekDayMetric[] {
+  const today = new Date();
+  const weekStart = startOfWeek(today);
+  const logsByDate = new Map(weeklyLogs.map((log) => [log.logDate, log]));
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(weekStart, index);
+    const dateKey = formatDate(date);
+
+    return {
+      date: dateKey,
+      log: logsByDate.get(dateKey) ?? null,
+    };
+  });
+}
+
+function buildWeightValues(weekDays: WeekDayMetric[], profileWeight: number) {
+  let lastWeight = profileWeight;
+
+  return weekDays.map((item) => {
+    if (item.log?.currentWeight) {
+      lastWeight = item.log.currentWeight;
+    }
+
+    return lastWeight;
+  });
+}
+
+function getCurrentStreak(weekDays: WeekDayMetric[], calorieGoal: number) {
+  const todayKey = formatDate(new Date());
+  const todayIndex = Math.max(
+    0,
+    weekDays.findIndex((item) => item.date === todayKey),
+  );
+  let streak = 0;
+
+  for (let index = todayIndex; index >= 0; index -= 1) {
+    if ((weekDays[index].log?.calories ?? 0) < calorieGoal) {
+      break;
+    }
+
+    streak += 1;
+  }
+
+  return streak;
+}
+
+function getNutrientPercent(weekDays: WeekDayMetric[], key: 'proteins' | 'carbs' | 'fats', dailyGoal: number) {
+  const goal = Math.max(dailyGoal, 1);
+  const weeklyTotal = weekDays.reduce((sum, item) => sum + (item.log?.[key] ?? 0), 0);
+
+  return Math.round((weeklyTotal / (goal * 7)) * 100);
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfWeek(date: Date) {
+  return addDays(date, -((date.getDay() + 6) % 7));
+}
+
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 const styles = StyleSheet.create({
@@ -316,7 +464,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
   bodyFatDelta: {
-    color: colors.primary,
+    color: colors.accent,
     ...font.semiBold,
     fontSize: 14,
   },
@@ -403,7 +551,7 @@ const styles = StyleSheet.create({
   healthText: {
     color: colors.accent,
     ...font.bold,
-    fontSize: 10,
+    fontSize: 16,
     position: 'absolute',
   },
   nutrientCard: {
@@ -471,30 +619,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     marginTop: 36,
   },
-  segmented: {
-    backgroundColor: '#F1F3FF',
-    borderRadius: 8,
-    flexDirection: 'row',
-    padding: 4,
-  },
-  segmentButton: {
-    alignItems: 'center',
-    borderRadius: 7,
-    height: 24,
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-  },
-  segmentButtonActive: {
-    backgroundColor: colors.surface,
-  },
-  segmentText: {
-    color: colors.inkMuted,
-    ...font.semiBold,
-    fontSize: 11,
-  },
-  segmentTextActive: {
-    color: colors.primary,
-  },
   weightDeltaBadge: {
     alignItems: 'center',
     backgroundColor: '#A9ECCC',
@@ -519,6 +643,11 @@ const styles = StyleSheet.create({
     color: colors.primary,
     ...font.bold,
     fontSize: 24,
+  },
+  weekLabel: {
+    color: colors.primary,
+    ...font.bold,
+    fontSize: 12,
   },
   weeklySuffix: {
     color: colors.inkMuted,

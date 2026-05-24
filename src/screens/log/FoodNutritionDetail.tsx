@@ -22,16 +22,18 @@ type MealOption = (typeof mealOptions)[number];
 
 type FoodNutritionDetailProps = {
   onAddToLog?: (mealType: MealOption) => void;
-  onEditIngredients?: () => void;
+  onDeleteRecipe?: () => void;
+  onEditRecipe?: () => void;
   recipe?: Recipe;
 };
 
-export function FoodNutritionDetail({ onAddToLog, onEditIngredients, recipe }: FoodNutritionDetailProps) {
+export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, recipe }: FoodNutritionDetailProps) {
   const [currentMeal] = useState<MealOption>(() => getCurrentMealOption(new Date()));
   const [selectedMeal, setSelectedMeal] = useState<MealOption>(currentMeal);
   const [isMealDropdownOpen, setIsMealDropdownOpen] = useState(false);
   const detail = buildRecipeDetail(recipe);
   const mealLabel = formatMealLabel(selectedMeal, currentMeal);
+  const isUserRecipe = Boolean(recipe && !recipe.isDefault && recipe.uid);
 
   return (
     <View style={styles.screen}>
@@ -157,15 +159,21 @@ export function FoodNutritionDetail({ onAddToLog, onEditIngredients, recipe }: F
             <SvgIcon height={20} source={svgIcons.plusRound} width={20} />
             <Text style={styles.addButtonText}>Add to Log</Text>
           </Pressable>
-          <Text style={styles.quickHeading}>QUICK ACTIONS</Text>
-          <View style={styles.quickActions}>
-            <Pressable accessibilityRole="button" onPress={onEditIngredients} style={[styles.actionPill, styles.ingredientsPill]}>
-              <Text style={styles.ingredientsText}>Edit Ingredients</Text>
-            </Pressable>
-            <Pressable style={styles.actionPill}>
-              <Text style={styles.saveText}>Save Recipe</Text>
-            </Pressable>
-          </View>
+          {recipe ? (
+            <>
+              <Text style={styles.quickHeading}>QUICK ACTIONS</Text>
+              <View style={styles.quickActions}>
+                <Pressable accessibilityRole="button" onPress={onEditRecipe} style={[styles.actionPill, styles.editPill]}>
+                  <Text style={styles.editText}>{recipe.isDefault ? 'Copy & Edit' : 'Edit'}</Text>
+                </Pressable>
+                {isUserRecipe ? (
+                  <Pressable accessibilityRole="button" onPress={onDeleteRecipe} style={[styles.actionPill, styles.deletePill]}>
+                    <Text style={styles.deleteText}>Delete</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </>
+          ) : null}
         </View>
       </View>
     </View>
@@ -434,10 +442,18 @@ const styles = StyleSheet.create({
   heroShade: {
     ...StyleSheet.absoluteFillObject,
   },
-  ingredientsPill: {
-    backgroundColor: '#A7EBCF',
+  deletePill: {
+    backgroundColor: '#FEE2E2',
   },
-  ingredientsText: {
+  deleteText: {
+    color: '#B91C1C',
+    ...font.bold,
+    fontSize: 12,
+  },
+  editPill: {
+    backgroundColor: '#CFFBE4',
+  },
+  editText: {
     color: colors.primary,
     ...font.bold,
     fontSize: 12,
@@ -590,6 +606,7 @@ const styles = StyleSheet.create({
   },
   quickActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
     marginTop: 16,
   },
@@ -599,11 +616,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     letterSpacing: 1,
     marginTop: 34,
-  },
-  saveText: {
-    color: colors.ink,
-    ...font.bold,
-    fontSize: 12,
   },
   screen: {
     paddingBottom: 2,

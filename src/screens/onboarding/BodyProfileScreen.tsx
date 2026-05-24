@@ -34,10 +34,11 @@ type BodyProfileScreenProps = {
     age: number;
     activityLevel: string;
   };
+  onLogout?: () => void;
   onUpdateProfile: (profile: any) => void;
 };
 
-export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfileScreenProps) {
+export function BodyProfileScreen({ initialProfile, onLogout, onUpdateProfile }: BodyProfileScreenProps) {
   const [height, setHeight] = useState<number | null>(initialProfile.height ?? null);
   const [weight, setWeight] = useState<number | null>(initialProfile.weight ?? null);
   const [age, setAge] = useState<number | null>(initialProfile.age ?? null);
@@ -55,6 +56,13 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
 
   // Kiểm tra xem đã điền đầy đủ cả 3 thông số chưa
   const isAllFilled = height !== null && weight !== null && age !== null;
+
+  useEffect(() => {
+    setHeight(initialProfile.height ?? null);
+    setWeight(initialProfile.weight ?? null);
+    setAge(initialProfile.age ?? null);
+    setActivityLevel(initialProfile.activityLevel);
+  }, [initialProfile.activityLevel, initialProfile.age, initialProfile.height, initialProfile.weight]);
 
   // Thực hiện tính toán chỉ số khi điền đủ
   useEffect(() => {
@@ -108,7 +116,9 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
   };
 
   const openNumberModal = (field: 'height' | 'weight' | 'age') => {
-    setModalInputValue('');
+    const currentValue = field === 'height' ? height : field === 'weight' ? weight : age;
+
+    setModalInputValue(currentValue === null ? '' : String(currentValue));
     setModalInputError('');
     setActiveModal(field);
   };
@@ -376,6 +386,12 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
             <Text style={styles.bannerHeading}>Precision is the foundation of progress.</Text>
           </View>
         </ImageBackground>
+
+        {onLogout ? (
+          <Pressable accessibilityRole="button" onPress={onLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
 
       {/* ------------------------------------------------------------- */}
@@ -774,6 +790,21 @@ const styles = StyleSheet.create({
     fontSize: 21,
     lineHeight: 29,
     width: '80%',
+  },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECACA',
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 58,
+    justifyContent: 'center',
+    marginTop: 28,
+  },
+  logoutText: {
+    color: '#B91C1C',
+    fontFamily: fontFamily.bold,
+    fontSize: 16,
   },
 
   // -------------------------------------------------------------

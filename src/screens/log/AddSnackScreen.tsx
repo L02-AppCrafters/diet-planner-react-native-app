@@ -56,7 +56,7 @@ export function AddSnackScreen({
   const [searchText, setSearchText] = useState('');
   const [activeMeal, setActiveMeal] = useState<MealTab>('Breakfast');
   const [isHistoryVisible, setIsHistoryVisible] = useState(false);
-  const recentRecipes = buildRecentRecipeItems(recentMealPlans);
+  const recentRecipes = filterRecentRecipeItems(buildRecentRecipeItems(recentMealPlans), searchText);
   const recentSelections = recentRecipes.slice(0, 5);
   const historyItems = recentRecipes.slice(0, 21);
   const [featuredRecent, ...smallRecentItems] = isHistoryVisible ? historyItems : recentSelections;
@@ -121,44 +121,47 @@ export function AddSnackScreen({
         </Pressable>
       </View>
 
-      {featuredRecent ? (
-        <Pressable onPress={onOpenDetail} style={styles.recentHeroCard}>
-          <View style={styles.recentRail} />
-          <Image source={featuredRecent.image} style={styles.recentImage} />
-          <View style={styles.recentCopy}>
-            <Text style={styles.recentTitle}>{featuredRecent.title}</Text>
-            <Text style={styles.recentMeta}>
-              {featuredRecent.calories} kcal {'\u2022'} {featuredRecent.source}
-            </Text>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => onQuickLogRecipe?.(featuredRecent.recipe, activeMeal)}
-            style={styles.recentAddButton}
-          >
-            <Text style={styles.recentAddText}>+</Text>
-          </Pressable>
-        </Pressable>
+      {isHistoryVisible && historyItems.length > 0 ? (
+        <View style={styles.historyList}>
+          {historyItems.map((item) => (
+            <RecentMealCard
+              item={item}
+              key={item.recipe.id}
+              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal)}
+              onPress={onOpenDetail}
+            />
+          ))}
+        </View>
+      ) : featuredRecent ? (
+        <RecentMealCard
+          item={featuredRecent}
+          onLogMeal={() => onQuickLogRecipe?.(featuredRecent.recipe, activeMeal)}
+          onPress={onOpenDetail}
+        />
       ) : (
         <View style={styles.emptyRecentCard}>
-          <Text style={styles.emptyRecentTitle}>No logged foods yet</Text>
-          <Text style={styles.emptyRecentText}>Meals you log this week will appear here for quick logging.</Text>
+          <Text style={styles.emptyRecentTitle}>{searchText.trim() ? 'No matching foods' : 'No logged foods yet'}</Text>
+          <Text style={styles.emptyRecentText}>
+            {searchText.trim() ? 'Try another recipe name, meal type, or ingredient keyword.' : 'Meals you log this week will appear here for quick logging.'}
+          </Text>
         </View>
       )}
 
-      <View style={styles.recentGrid}>
-        {smallRecentItems.map((item, index) => (
-          <SmallRecentCard
-            accent={index % 2 === 0 ? '#0B6BD3' : colors.primaryMid}
-            calories={`${item.calories} kcal`}
-            image={item.image}
-            key={item.recipe.id}
-            onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal)}
-            onPress={onOpenDetail}
-            title={item.title}
-          />
-        ))}
-      </View>
+      {!isHistoryVisible ? (
+        <View style={styles.recentGrid}>
+          {smallRecentItems.map((item, index) => (
+            <SmallRecentCard
+              accent={index % 2 === 0 ? '#0B6BD3' : colors.primaryMid}
+              calories={`${item.calories} kcal`}
+              image={item.image}
+              key={item.recipe.id}
+              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal)}
+              onPress={onOpenDetail}
+              title={item.title}
+            />
+          ))}
+        </View>
+      ) : null}
 
       <View style={styles.recommendationCard}>
         <View style={styles.insightRail} />
@@ -195,6 +198,32 @@ export function AddSnackScreen({
   );
 }
 
+function RecentMealCard({
+  item,
+  onLogMeal,
+  onPress,
+}: {
+  item: RecentRecipeItem;
+  onLogMeal?: () => void;
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={styles.recentHeroCard}>
+      <View style={styles.recentRail} />
+      <Image source={item.image} style={styles.recentImage} />
+      <View style={styles.recentCopy}>
+        <Text style={styles.recentTitle}>{item.title}</Text>
+        <Text style={styles.recentMeta}>
+          {item.calories} kcal {'\u2022'} {item.source}
+        </Text>
+      </View>
+      <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.recentAddButton}>
+        <Text style={styles.recentAddText}>+</Text>
+      </Pressable>
+    </Pressable>
+  );
+}
+
 function SmallRecentCard({
   accent,
   calories,
@@ -219,10 +248,37 @@ function SmallRecentCard({
         <Text style={styles.smallRecentCalories}>{calories}</Text>
       </View>
       <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.smallRecentButton}>
-        <Text style={styles.smallRecentButtonText}>Log</Text>
+        <Text style={styles.smallRecentButtonText}>+</Text>
       </Pressable>
     </Pressable>
   );
+}
+
+function filterRecentRecipeItems(items: RecentRecipeItem[], searchText: string) {
+  const query = normalizeSearchText(searchText);
+
+  if (!query) {
+    return items;
+  }
+
+  return items.filter((item) => {
+    const recipe = item.recipe;
+    const json = recipe.jsonData;
+    const searchable = [
+      item.title,
+      item.source,
+      json.description,
+      json.mealType,
+      ...(json.category ?? []),
+      ...(json.ingredients ?? []).map((ingredient) => `${ingredient.ingredient} ${ingredient.quantity ?? ''}`),
+    ].join(' ');
+
+    return normalizeSearchText(searchable).includes(query);
+  });
+}
+
+function normalizeSearchText(value: string) {
+  return value.trim().toLowerCase();
 }
 
 function buildRecentRecipeItems(mealPlans: MealPlan[]): RecentRecipeItem[] {
@@ -320,6 +376,10 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 999,
     borderTopRightRadius: 999,
     width: 4,
+  },
+  historyList: {
+    gap: spacing.md,
+    marginTop: spacing.xl,
   },
   recentAddButton: {
     alignItems: 'center',
@@ -537,15 +597,21 @@ const styles = StyleSheet.create({
   },
   smallRecentButton: {
     alignItems: 'center',
-    backgroundColor: colors.accentSoft,
-    borderRadius: 10,
-    height: 42,
+    alignSelf: 'flex-start',
+    backgroundColor: '#A7EBCF',
+    borderRadius: 999,
+    height: 44,
     justifyContent: 'center',
+    width: 44,
   },
   smallRecentButtonText: {
     color: colors.primary,
-    ...font.bold,
-    fontSize: 14,
+    ...font.medium,
+    fontSize: 30,
+    includeFontPadding: false,
+    lineHeight: 30,
+    textAlign: 'center',
+    textAlignVertical: 'center',
   },
   smallRecentCalories: {
     color: '#3C4A3C',

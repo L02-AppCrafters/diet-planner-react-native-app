@@ -70,6 +70,9 @@ export type MealPlan = {
   foodNutritionId: string | null;
   foodNutrition: FoodNutritionItem | null;
   servings: number;
+  snapshotImageUrl: string | null;
+  snapshotJsonData: Recipe['jsonData'] | null;
+  snapshotRecipeName: string | null;
   date: string;
   mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
   uid: string;
@@ -108,6 +111,8 @@ export type Recipe = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type UpdateRecipeInput = Pick<Recipe, 'imageUrl' | 'jsonData' | 'recipeName'>;
 
 export type UpsertDailyLogInput = {
   logDate: string;

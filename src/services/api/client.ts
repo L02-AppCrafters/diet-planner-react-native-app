@@ -6,6 +6,7 @@ import type {
   MealPlan,
   PaginatedFoodNutrition,
   Recipe,
+  UpdateRecipeInput,
   UpsertDailyLogInput,
 } from './types';
 
@@ -96,6 +97,29 @@ export class ApiClient {
 
   async getRecipes() {
     return this.request<Recipe[]>('/recipes', { auth: true });
+  }
+
+  async createRecipe(input: UpdateRecipeInput) {
+    return this.request<Recipe>('/recipes', {
+      auth: true,
+      body: input,
+      method: 'POST',
+    });
+  }
+
+  async updateRecipe(id: string, input: UpdateRecipeInput) {
+    return this.request<Recipe>(`/recipes/${id}`, {
+      auth: true,
+      body: input,
+      method: 'PATCH',
+    });
+  }
+
+  async deleteRecipe(id: string) {
+    return this.request<void>(`/recipes/${id}`, {
+      auth: true,
+      method: 'DELETE',
+    });
   }
 
   async getDailyLog(date: string) {

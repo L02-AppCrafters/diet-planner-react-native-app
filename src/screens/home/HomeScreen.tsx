@@ -9,6 +9,7 @@ import { LogScreen } from '../log/LogScreen';
 import { MainIngredientsScreen } from '../log/MainIngredientsScreen';
 import { ProgressScreen } from '../progress/ProgressScreen';
 import { RecipesScreen } from '../recipes/RecipesScreen';
+import { EditRecipeScreen } from '../recipes/EditRecipeScreen';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
@@ -66,11 +67,15 @@ type HomeScreenProps = {
   metrics: HomeMetrics;
   onAddRecipeToLog: (recipe: Recipe, mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => Promise<void>;
   onAddWater: () => void | Promise<void>;
+  onDeleteRecipe: (recipe: Recipe) => Promise<void>;
   onSelectLogDate: (date: string) => void | Promise<void>;
+  onUpdateRecipe: (recipe: Recipe) => Promise<Recipe>;
   recipes: Recipe[];
   selectedLogDate: string;
   onTabChange: (tab: AppTab) => void;
   onOpenSettings?: () => void;
+  profileWeight: number;
+  weeklyLogs: DailyLog[];
   weeklyMealPlans: MealPlan[];
 };
 
@@ -101,13 +106,13 @@ const tabs: Array<{ key: AppTab; icon: string; iconHeight: number; iconWidth: nu
 
 function getCalorieRingMetrics(summary: CalorieSummary) {
   const goal = Math.max(summary.goal, 1);
-  const consumed = Math.min(Math.max(summary.consumed, 0), goal);
+  const consumed = Math.max(summary.consumed, 0);
   const consumedProgress = consumed / goal;
 
   return {
     consumed,
     consumedPercent: Math.round(consumedProgress * 100),
-    consumedProgress,
+    ringProgress: Math.min(consumedProgress, 1),
   };
 }
 
@@ -118,15 +123,20 @@ export function HomeScreen({
   metrics,
   onAddRecipeToLog,
   onAddWater,
+  onDeleteRecipe,
   onOpenSettings,
   onSelectLogDate,
   onTabChange,
+  onUpdateRecipe,
+  profileWeight,
   recipes,
   selectedLogDate,
+  weeklyLogs,
   weeklyMealPlans,
 }: HomeScreenProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
+  const [recipeRoute, setRecipeRoute] = useState<'list' | 'detail' | 'edit'>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const scrollToTop = () => {
     requestAnimationFrame(() => {
@@ -152,12 +162,14 @@ export function HomeScreen({
   };
   const openRecipeDetail = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
+    setRecipeRoute('detail');
     scrollToTop();
   };
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
   const isMainIngredients = activeTab === 'Log' && logRoute === 'mainIngredients';
   const isFoodNutritionDetail = activeTab === 'Log' && logRoute === 'foodNutritionDetail';
-  const isRecipeNutritionDetail = activeTab === 'Recipes' && selectedRecipe !== null;
+  const isRecipeNutritionDetail = activeTab === 'Recipes' && recipeRoute === 'detail' && selectedRecipe !== null;
+  const isEditRecipe = activeTab === 'Recipes' && recipeRoute === 'edit' && selectedRecipe !== null;
   const isNutritionDetail = isFoodNutritionDetail || isRecipeNutritionDetail;
   const headerTitle =
     isMainIngredients
@@ -182,6 +194,7 @@ export function HomeScreen({
             onBack={() => {
               if (isRecipeNutritionDetail) {
                 setSelectedRecipe(null);
+                setRecipeRoute('list');
                 return;
               }
 
@@ -210,6 +223,7 @@ export function HomeScreen({
               onAddSnack={() => setLogRoute('addSnack')}
               onOpenRecipe={(recipe) => {
                 setSelectedRecipe(recipe);
+                setRecipeRoute('detail');
                 onTabChange('Recipes');
                 scrollToTop();
               }}
@@ -235,26 +249,52 @@ export function HomeScreen({
           {isFoodNutritionDetail ? (
             <FoodNutritionDetail
               onAddToLog={logMealAndReturnToPlan}
-              onEditIngredients={() => setLogRoute('mainIngredients')}
               recipe={selectedRecipe ?? undefined}
             />
           ) : null}
           {isRecipeNutritionDetail ? (
             <FoodNutritionDetail
               onAddToLog={logMealAndReturnToPlan}
-              onEditIngredients={() => setLogRoute('mainIngredients')}
+              onDeleteRecipe={async () => {
+                if (!selectedRecipe) return;
+                await onDeleteRecipe(selectedRecipe);
+                setSelectedRecipe(null);
+                setRecipeRoute('list');
+              }}
+              onEditRecipe={() => setRecipeRoute('edit')}
               recipe={selectedRecipe}
             />
           ) : null}
-          {activeTab === 'Recipes' && !isRecipeNutritionDetail ? (
+          {isEditRecipe && selectedRecipe ? (
+            <EditRecipeScreen
+              onCancel={() => setRecipeRoute('detail')}
+              onSave={async (recipe) => {
+                const updatedRecipe = await onUpdateRecipe(recipe);
+                setSelectedRecipe(updatedRecipe);
+                setRecipeRoute('detail');
+              }}
+              recipe={selectedRecipe}
+            />
+          ) : null}
+          {activeTab === 'Recipes' && !isRecipeNutritionDetail && !isEditRecipe ? (
             <RecipesScreen onOpenRecipe={openRecipeDetail} recipes={recipes} />
           ) : null}
-          {activeTab === 'Progress' ? <ProgressScreen /> : null}
+          {activeTab === 'Progress' ? (
+            <ProgressScreen
+              calorieGoal={metrics.calorieGoal}
+              carbsGoal={metrics.carbsGoal}
+              fatsGoal={metrics.fatsGoal}
+              profileWeight={profileWeight}
+              proteinGoal={metrics.proteinGoal}
+              weeklyLogs={weeklyLogs}
+            />
+          ) : null}
         </ScrollView>
         <BottomNavigation
           activeTab={activeTab}
           onTabChange={(tab) => {
             setSelectedRecipe(null);
+            setRecipeRoute('list');
             if (tab !== 'Log') {
               setLogRoute('log');
             }
@@ -358,8 +398,8 @@ function CalorieRing({ summary }: { summary: CalorieSummary }) {
   const strokeWidth = 24;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const { consumed, consumedPercent, consumedProgress } = getCalorieRingMetrics(summary);
-  const strokeDashoffset = circumference * (1 - consumedProgress);
+  const { consumed, consumedPercent, ringProgress } = getCalorieRingMetrics(summary);
+  const strokeDashoffset = circumference * (1 - ringProgress);
 
   return (
     <View style={styles.ringWrap}>
