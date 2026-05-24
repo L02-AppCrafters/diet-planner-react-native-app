@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Inter_400Regular,
   Inter_500Medium,
@@ -9,21 +9,85 @@ import {
   useFonts,
 } from '@expo-google-fonts/inter';
 import { Manrope_400Regular, Manrope_700Bold, Manrope_800ExtraBold } from '@expo-google-fonts/manrope';
-import { SafeAreaView, StatusBar, StyleSheet } from 'react-native';
-import { HomeScreen } from './src/screens/home/HomeScreen';
+import * as SecureStore from 'expo-secure-store';
+import { Platform, SafeAreaView, StatusBar, StyleSheet, Text, View } from 'react-native';
+import { AuthScreen } from './src/screens/auth/AuthScreen';
+import { HomeMetrics, HomeScreen } from './src/screens/home/HomeScreen';
 import { ChooseGoalScreen } from './src/screens/onboarding/ChooseGoalScreen';
 import { BodyProfileScreen } from './src/screens/onboarding/BodyProfileScreen';
 import { SettingsProfileScreen } from './src/screens/profile/SettingsProfileScreen';
+import { ApiClient, ApiError, ApiTokens, DailyLog, MealPlan, Recipe } from './src/services/api';
 import { colors } from './src/theme/colors';
 import { AppTab } from './src/types/navigation';
 
-export type AppFlow = 'OnboardingGoal' | 'OnboardingProfile' | 'MainApp' | 'SettingsProfile';
+export type AppFlow = 'OnboardingGoal' | 'OnboardingProfile' | 'Auth' | 'MainApp' | 'SettingsProfile';
+
+type UserProfile = {
+  activityLevel: string;
+  age: number;
+  goal: string;
+  height: number;
+  tdee: number;
+  weight: number;
+  weightHistory: { date: string; weight: number }[];
+};
+
+const ACCESS_TOKEN_KEY = 'nutriPlanner.accessToken';
+const REFRESH_TOKEN_KEY = 'nutriPlanner.refreshToken';
+const DAY_LABELS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+const tokenStorage = {
+  async deleteItem(key: string) {
+    if (Platform.OS === 'web') {
+      globalThis.localStorage?.removeItem(key);
+      return;
+    }
+
+    await SecureStore.deleteItemAsync(key);
+  },
+  async getItem(key: string) {
+    if (Platform.OS === 'web') {
+      return globalThis.localStorage?.getItem(key) ?? null;
+    }
+
+    return SecureStore.getItemAsync(key);
+  },
+  async setItem(key: string, value: string) {
+    if (Platform.OS === 'web') {
+      globalThis.localStorage?.setItem(key, value);
+      return;
+    }
+
+    await SecureStore.setItemAsync(key, value);
+  },
+};
+
+function parseStoredNumber(value: string | null, fallback: number) {
+  if (value === null) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
 export default function App() {
   const [currentFlow, setCurrentFlow] = useState<AppFlow>('OnboardingGoal');
   const [activeTab, setActiveTab] = useState<AppTab>('Home');
-  const [profile, setProfile] = useState({
-    goal: 'healthy_lifestyle',
+  const accessTokenRef = useRef<string | null>(null);
+  const [authError, setAuthError] = useState('');
+  const [isAuthSubmitting, setIsAuthSubmitting] = useState(false);
+  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [todayLog, setTodayLog] = useState<DailyLog | null>(null);
+  const [weeklyLogs, setWeeklyLogs] = useState<DailyLog[]>([]);
+  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
+  const [weeklyMealPlans, setWeeklyMealPlans] = useState<MealPlan[]>([]);
+  const [selectedLogDate, setSelectedLogDate] = useState(() => formatDate(new Date()));
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [toastMessage, setToastMessage] = useState('');
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [profile, setProfile] = useState<UserProfile>({
+    goal: 'lose_weight',
     height: 175,
     weight: 70,
     age: 28,
@@ -34,6 +98,150 @@ export default function App() {
       { date: '2026-05-23', weight: 70.0 }
     ] as { date: string; weight: number }[]
   });
+
+  const api = useMemo(
+    () =>
+      new ApiClient({
+        baseUrl: process.env.EXPO_PUBLIC_API_URL,
+        getAccessToken: () => accessTokenRef.current,
+        onTokensRefreshed: async (tokens: ApiTokens) => {
+          accessTokenRef.current = tokens.accessToken;
+          await tokenStorage.setItem(ACCESS_TOKEN_KEY, tokens.accessToken);
+          await tokenStorage.setItem(REFRESH_TOKEN_KEY, tokens.refreshToken);
+        },
+        onUnauthorized: async () => {
+          accessTokenRef.current = null;
+          await tokenStorage.deleteItem(ACCESS_TOKEN_KEY);
+          await tokenStorage.deleteItem(REFRESH_TOKEN_KEY);
+          setCurrentFlow('Auth');
+        },
+      }),
+    [],
+  );
+
+  const showSuccessToast = (message: string) => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    setToastMessage(message);
+    toastTimerRef.current = setTimeout(() => {
+      setToastMessage('');
+      toastTimerRef.current = null;
+    }, 2200);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadStoredTokens = async () => {
+      try {
+        const [accessToken, refreshToken] = await Promise.all([
+          tokenStorage.getItem(ACCESS_TOKEN_KEY),
+          tokenStorage.getItem(REFRESH_TOKEN_KEY),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        accessTokenRef.current = accessToken;
+        api.setRefreshToken(refreshToken);
+
+        if (accessToken || refreshToken) {
+          const user = await api.me();
+
+          if (!isMounted) {
+            return;
+          }
+
+          setProfile((prev) => ({
+            ...prev,
+            activityLevel: user.activityLevel ?? prev.activityLevel,
+            age: user.age ?? prev.age,
+            goal: user.goal ?? prev.goal,
+            height: parseStoredNumber(user.height, prev.height),
+            tdee: user.calories ?? prev.tdee,
+            weight: parseStoredNumber(user.weight, prev.weight),
+          }));
+          setCurrentFlow('MainApp');
+        }
+      } catch {
+        accessTokenRef.current = null;
+        api.setRefreshToken(null);
+        await Promise.all([
+          tokenStorage.deleteItem(ACCESS_TOKEN_KEY),
+          tokenStorage.deleteItem(REFRESH_TOKEN_KEY),
+        ]);
+      } finally {
+        if (isMounted) {
+          setIsCheckingSession(false);
+        }
+      }
+    };
+
+    loadStoredTokens();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [api]);
+
+  useEffect(() => {
+    if (currentFlow !== 'MainApp' || !accessTokenRef.current) {
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadHomeData = async () => {
+      try {
+        const today = new Date();
+        const startDate = formatDate(startOfWeek(today));
+        const endDate = formatDate(endOfWeek(today));
+        const todayDate = formatDate(today);
+        const [currentLog, rangeLogs, recipeRows, mealPlanRows, weekMealPlanRows] = await Promise.all([
+          api.getDailyLog(todayDate),
+          api.getDailyLogs(startDate, endDate),
+          api.getRecipes(),
+          api.getMealPlans(selectedLogDate),
+          api.getMealPlans({ endDate, startDate }),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
+        setTodayLog(currentLog);
+        setWeeklyLogs(rangeLogs);
+        setRecipes(recipeRows);
+        setMealPlans(mealPlanRows);
+        setWeeklyMealPlans(weekMealPlanRows);
+      } catch {
+        if (isMounted) {
+          setTodayLog(null);
+          setWeeklyLogs([]);
+          setMealPlans([]);
+          setWeeklyMealPlans([]);
+          setRecipes([]);
+        }
+      }
+    };
+
+    loadHomeData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [api, currentFlow, selectedLogDate]);
 
   const [fontsLoaded] = useFonts({
     Inter_400Regular,
@@ -47,9 +255,121 @@ export default function App() {
     Manrope_800ExtraBold,
   });
 
-  if (!fontsLoaded) {
+  if (!fontsLoaded || isCheckingSession) {
     return <SafeAreaView style={styles.safeArea} />;
   }
+
+  const buildInitialWeightHistory = (weight: number) => [
+    { date: '2026-05-22', weight: Math.round((weight + 0.2) * 10) / 10 },
+    { date: '2026-05-23', weight },
+  ];
+
+  const syncProfileToBackend = async (profileToSync = profile) => {
+    const proteinGoal = Math.round((profileToSync.weight * 1.8) / 5) * 5;
+    const fatsGoal = Math.round((profileToSync.tdee * 0.25) / 9);
+    const carbsGoal = Math.max(0, Math.round((profileToSync.tdee - proteinGoal * 4 - fatsGoal * 9) / 4));
+
+    await api.updateMe({
+      activityLevel: profileToSync.activityLevel,
+      age: profileToSync.age,
+      calories: profileToSync.tdee,
+      carbsGoal,
+      fatsGoal,
+      goal: profileToSync.goal,
+      height: String(profileToSync.height),
+      proteins: proteinGoal,
+      weight: String(profileToSync.weight),
+    });
+  };
+
+  const finishAuthentication = async (authAction: () => Promise<void>) => {
+    setAuthError('');
+    setIsAuthSubmitting(true);
+
+    try {
+      await authAction();
+      await syncProfileToBackend();
+      setCurrentFlow('MainApp');
+    } catch (error) {
+      if (error instanceof ApiError) {
+        setAuthError(error.message);
+      } else {
+        setAuthError('Could not connect to the server. Please check that the backend is running.');
+      }
+    } finally {
+      setIsAuthSubmitting(false);
+    }
+  };
+
+  const selectedDailyLog = weeklyLogs.find((log) => log.logDate === selectedLogDate) ?? null;
+  const homeMetrics = buildHomeMetrics(profile, todayLog, weeklyLogs);
+  const selectLogDate = async (date: string) => {
+    setSelectedLogDate(date);
+    setMealPlans(await api.getMealPlans(date));
+  };
+  const addWater = async () => {
+    const logDate = formatDate(new Date());
+    const nextWaterMl = Math.min((todayLog?.waterMl ?? 0) + 500, 2500);
+    const updatedLog = await api.upsertDailyLog({
+      logDate,
+      calories: todayLog?.calories ?? 0,
+      proteins: todayLog?.proteins ?? 0,
+      carbs: todayLog?.carbs ?? 0,
+      fats: todayLog?.fats ?? 0,
+      waterMl: nextWaterMl,
+      currentWeight: todayLog?.currentWeight ?? undefined,
+      notes: todayLog?.notes ?? undefined,
+    });
+    const latestWeeklyLogs = await api.getDailyLogs(formatDate(startOfWeek(new Date())), formatDate(endOfWeek(new Date())));
+
+    setTodayLog(updatedLog);
+    setWeeklyLogs(latestWeeklyLogs);
+    showSuccessToast('Water logged successfully');
+  };
+  const addRecipeToLog = async (
+    recipe: Recipe,
+    mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack',
+  ) => {
+    const logDate = formatDate(new Date());
+    const normalizedMealType = mealType.toLowerCase() as 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    const calories = recipe.jsonData.calories ?? 0;
+    const proteins = recipe.jsonData.proteins ?? 0;
+    const carbs = recipe.jsonData.carbs ?? 0;
+    const fats = recipe.jsonData.fats ?? 0;
+
+    await api.createMealPlan({
+      date: logDate,
+      mealType: normalizedMealType,
+      recipeId: recipe.id,
+      servings: 1,
+    });
+
+    const updatedLog = await api.upsertDailyLog({
+      logDate,
+      calories: (todayLog?.calories ?? 0) + calories,
+      proteins: (todayLog?.proteins ?? 0) + proteins,
+      carbs: (todayLog?.carbs ?? 0) + carbs,
+      fats: (todayLog?.fats ?? 0) + fats,
+      waterMl: todayLog?.waterMl ?? 0,
+      currentWeight: todayLog?.currentWeight ?? undefined,
+      notes: todayLog?.notes ?? undefined,
+    });
+    const [latestMealPlans, latestWeeklyLogs] = await Promise.all([
+      api.getMealPlans(logDate),
+      api.getDailyLogs(formatDate(startOfWeek(new Date())), formatDate(endOfWeek(new Date()))),
+    ]);
+    const latestWeeklyMealPlans = await api.getMealPlans({
+      startDate: formatDate(startOfWeek(new Date())),
+      endDate: formatDate(endOfWeek(new Date())),
+    });
+
+    setSelectedLogDate(logDate);
+    setTodayLog(updatedLog);
+    setWeeklyLogs(latestWeeklyLogs);
+    setMealPlans(latestMealPlans);
+    setWeeklyMealPlans(latestWeeklyMealPlans);
+    showSuccessToast('Meal added to log');
+  };
 
   // 1. Luồng chọn Goal Onboarding
   if (currentFlow === 'OnboardingGoal') {
@@ -68,18 +388,48 @@ export default function App() {
     return (
       <BodyProfileScreen
         initialProfile={profile}
-        onUpdateProfile={(updatedProfile) => {
-          // Khởi tạo lịch sử cân nặng ban đầu khi onboarding thành công
-          const initialHistory = [
-            { date: '2026-05-22', weight: Math.round((updatedProfile.weight + 0.2) * 10) / 10 },
-            { date: '2026-05-23', weight: updatedProfile.weight }
-          ];
-          setProfile({
+        onUpdateProfile={async (updatedProfile) => {
+          const initialHistory = buildInitialWeightHistory(updatedProfile.weight);
+          const nextProfile = {
             ...updatedProfile,
             weightHistory: initialHistory
-          });
-          setCurrentFlow('MainApp');
+          };
+
+          setProfile(nextProfile);
+
+          if (accessTokenRef.current) {
+            setAuthError('');
+            setIsAuthSubmitting(true);
+            try {
+              await syncProfileToBackend(nextProfile);
+              setCurrentFlow('MainApp');
+            } catch (error) {
+              setAuthError(error instanceof ApiError ? error.message : 'Could not update your profile.');
+              setCurrentFlow('Auth');
+            } finally {
+              setIsAuthSubmitting(false);
+            }
+            return;
+          }
+
+          setCurrentFlow('Auth');
         }}
+      />
+    );
+  }
+
+  if (currentFlow === 'Auth') {
+    return (
+      <AuthScreen
+        error={authError}
+        isSubmitting={isAuthSubmitting}
+        onBack={() => setCurrentFlow('OnboardingProfile')}
+        onLogin={(email, password) => finishAuthentication(async () => {
+          await api.login(email, password);
+        })}
+        onRegister={(email, password) => finishAuthentication(async () => {
+          await api.register(email, password);
+        })}
       />
     );
   }
@@ -124,10 +474,31 @@ export default function App() {
       <StatusBar barStyle="dark-content" backgroundColor={colors.header} />
       <HomeScreen
         activeTab={activeTab}
+        dailyLog={selectedDailyLog}
+        mealPlans={mealPlans}
+        metrics={homeMetrics}
+        onAddRecipeToLog={addRecipeToLog}
+        onAddWater={addWater}
+        recipes={recipes}
+        weeklyMealPlans={weeklyMealPlans}
+        selectedLogDate={selectedLogDate}
+        onSelectLogDate={selectLogDate}
         onTabChange={setActiveTab}
         onOpenSettings={() => setCurrentFlow('OnboardingProfile')}
       />
+      {toastMessage ? <SuccessToast message={toastMessage} /> : null}
     </SafeAreaView>
+  );
+}
+
+function SuccessToast({ message }: { message: string }) {
+  return (
+    <View pointerEvents="none" style={styles.toast}>
+      <View style={styles.toastIcon}>
+        <Text style={styles.toastIconText}>✓</Text>
+      </View>
+      <Text style={styles.toastText}>{message}</Text>
+    </View>
   );
 }
 
@@ -136,4 +507,92 @@ const styles = StyleSheet.create({
     backgroundColor: colors.header,
     flex: 1,
   },
+  toast: {
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: colors.primaryDark,
+    borderRadius: 18,
+    bottom: 112,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 14,
+    position: 'absolute',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    zIndex: 20,
+  },
+  toastIcon: {
+    alignItems: 'center',
+    backgroundColor: '#A7EBCF',
+    borderRadius: 999,
+    height: 22,
+    justifyContent: 'center',
+    width: 22,
+  },
+  toastIconText: {
+    color: colors.primary,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 18,
+  },
+  toastText: {
+    color: colors.surface,
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function startOfWeek(date: Date) {
+  return addDays(date, -((date.getDay() + 6) % 7));
+}
+
+function endOfWeek(date: Date) {
+  return addDays(startOfWeek(date), 6);
+}
+
+function formatDate(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function buildHomeMetrics(profile: UserProfile, todayLog: DailyLog | null, weeklyLogs: DailyLog[]): HomeMetrics {
+  const proteinGoal = Math.round((profile.weight * 1.8) / 5) * 5;
+  const fatsGoal = Math.round((profile.tdee * 0.25) / 9);
+  const today = new Date();
+  const logsByDate = new Map(weeklyLogs.map((log) => [log.logDate, log]));
+  const weekStart = startOfWeek(today);
+
+  return {
+    carbs: todayLog?.carbs ?? 0,
+    carbsGoal: Math.max(0, Math.round((profile.tdee - proteinGoal * 4 - fatsGoal * 9) / 4)),
+    calories: todayLog?.calories ?? 0,
+    calorieGoal: profile.tdee,
+    fats: todayLog?.fats ?? 0,
+    fatsGoal,
+    proteins: todayLog?.proteins ?? 0,
+    proteinGoal,
+    waterMl: todayLog?.waterMl ?? 0,
+    weeklyCalories: Array.from({ length: 7 }, (_, index) => {
+      const date = addDays(weekStart, index);
+      const dateKey = formatDate(date);
+      const log = logsByDate.get(formatDate(date));
+
+      return {
+        calories: log?.calories ?? 0,
+        day: DAY_LABELS[date.getDay()],
+        isToday: dateKey === formatDate(today),
+      };
+    }),
+  };
+}

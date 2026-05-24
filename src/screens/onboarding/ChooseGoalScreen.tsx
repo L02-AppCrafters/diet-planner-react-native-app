@@ -51,7 +51,7 @@ const goals: GoalOption[] = [
 ];
 
 export function ChooseGoalScreen({ onSelectGoal }: ChooseGoalScreenProps) {
-  const [selectedGoal, setSelectedGoal] = useState<string>('healthy_lifestyle');
+  const [selectedGoal, setSelectedGoal] = useState<string>('lose_weight');
 
   return (
     <SafeAreaView style={styles.container}>

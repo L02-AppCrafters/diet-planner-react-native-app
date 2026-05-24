@@ -38,10 +38,9 @@ type BodyProfileScreenProps = {
 };
 
 export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfileScreenProps) {
-  // Ban đầu đặt các thông số ở dạng null (chưa chọn) để đảm bảo "nhập đủ mới hiện"
-  const [height, setHeight] = useState<number | null>(null);
-  const [weight, setWeight] = useState<number | null>(null);
-  const [age, setAge] = useState<number | null>(null);
+  const [height, setHeight] = useState<number | null>(initialProfile.height ?? null);
+  const [weight, setWeight] = useState<number | null>(initialProfile.weight ?? null);
+  const [age, setAge] = useState<number | null>(initialProfile.age ?? null);
   const [activityLevel, setActivityLevel] = useState<string>(initialProfile.activityLevel);
 
   // Trạng thái mở Modal: 'height' | 'weight' | 'age' | null

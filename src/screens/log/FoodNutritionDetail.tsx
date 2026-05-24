@@ -3,53 +3,39 @@ import { ImageBackground, Pressable, StyleSheet, Text, View } from 'react-native
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
+import { Recipe } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
 
-const phoBoImage = require('../../../assets/pho-bo-background-image.png');
+const fallbackImage = require('../../../assets/pho-bo-background-image.png');
 
 const font = {
   regular: { fontFamily: fontFamily.regular, fontWeight: undefined },
   medium: { fontFamily: fontFamily.medium, fontWeight: undefined },
   semiBold: { fontFamily: fontFamily.semiBold, fontWeight: undefined },
   bold: { fontFamily: fontFamily.bold, fontWeight: undefined },
-  extraBold: { fontFamily: fontFamily.extraBold, fontWeight: undefined },
-  black: { fontFamily: fontFamily.black, fontWeight: undefined },
 } as const;
 
-const macros = [
-  { color: colors.primary, label: 'Protein', percent: 35, value: '28g' },
-  { color: colors.accent, label: 'Carbohydrates', percent: 50, value: '52g' },
-  { color: '#2F7764', label: 'Fats', percent: 15, value: '14g' },
-];
-
-const micronutrients = [
-  ['Vitamin A', '12% DV', colors.ink],
-  ['Vitamin C', '8% DV', colors.ink],
-  ['Calcium', '4% DV', colors.ink],
-  ['Iron', '18% DV', colors.ink],
-  ['Sodium', '980mg', '#D91F26'],
-  ['Potassium', '420mg', colors.ink],
-] as const;
-
-const mealOptions = ['Breakfast', 'Lunch', 'Dinner'] as const;
+const mealOptions = ['Breakfast', 'Lunch', 'Dinner', 'Snack'] as const;
 type MealOption = (typeof mealOptions)[number];
-const currentMeal: MealOption = 'Lunch';
 
 type FoodNutritionDetailProps = {
-  onAddToLog?: () => void;
+  onAddToLog?: (mealType: MealOption) => void;
   onEditIngredients?: () => void;
+  recipe?: Recipe;
 };
 
-export function FoodNutritionDetail({ onAddToLog, onEditIngredients }: FoodNutritionDetailProps) {
-  const [selectedMeal, setSelectedMeal] = useState<MealOption>('Lunch');
+export function FoodNutritionDetail({ onAddToLog, onEditIngredients, recipe }: FoodNutritionDetailProps) {
+  const [currentMeal] = useState<MealOption>(() => getCurrentMealOption(new Date()));
+  const [selectedMeal, setSelectedMeal] = useState<MealOption>(currentMeal);
   const [isMealDropdownOpen, setIsMealDropdownOpen] = useState(false);
-  const mealLabel = selectedMeal === currentMeal ? `${selectedMeal} (Now)` : selectedMeal;
+  const detail = buildRecipeDetail(recipe);
+  const mealLabel = formatMealLabel(selectedMeal, currentMeal);
 
   return (
     <View style={styles.screen}>
-      <ImageBackground imageStyle={styles.heroImage} source={phoBoImage} style={styles.hero}>
+      <ImageBackground imageStyle={styles.heroImage} source={detail.imageSource} style={styles.hero}>
         <Svg height="100%" style={styles.heroShade} width="100%">
           <Defs>
             <LinearGradient id="heroBlackGradient" x1="0" x2="0" y1="0" y2="1">
@@ -61,32 +47,42 @@ export function FoodNutritionDetail({ onAddToLog, onEditIngredients }: FoodNutri
           <Rect fill="url(#heroBlackGradient)" height="100%" width="100%" />
         </Svg>
         <View style={styles.heroCopy}>
-          <Text style={styles.cuisineBadge}>Vietnamese Cuisine</Text>
-          <Text style={styles.foodTitle}>Phở Bò</Text>
-          <Text style={styles.foodSubtitle}>Traditional Beef Noodle Soup • 1 standard bowl{'\n'}(500g)</Text>
+          <Text style={styles.cuisineBadge}>{detail.badge}</Text>
+          <Text style={styles.foodTitle}>{detail.title}</Text>
+          <Text style={styles.foodSubtitle}>{detail.subtitle}</Text>
         </View>
       </ImageBackground>
 
       <View style={[styles.card, styles.calorieCard]}>
         <Text style={styles.overline}>TOTAL CALORIES</Text>
-        <Text style={styles.calorieValue}>450</Text>
+        <Text style={styles.calorieValue}>{detail.calories}</Text>
         <Text style={styles.calorieUnit}>kcal per serving</Text>
       </View>
 
       <View style={styles.content}>
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Macronutrient Breakdown</Text>
-          <View style={styles.macroList}>
-            {macros.map((macro) => (
-              <View key={macro.label}>
-                <View style={styles.macroRow}>
-                  <Text style={styles.macroLabel}>{macro.label}</Text>
-                  <Text style={[styles.macroValue, { color: macro.color }]}>
-                    {macro.value} <Text style={styles.macroPercent}>({macro.percent}%)</Text>
-                  </Text>
+          <View style={styles.nutrientList}>
+            {detail.macros.map((macro) => (
+              <View key={macro.label} style={styles.nutrientCard}>
+                <View style={[styles.nutrientIcon, { backgroundColor: macro.backgroundColor }]}>
+                  <SvgIcon source={macro.icon} size={22} />
                 </View>
-                <View style={styles.macroTrack}>
-                  <View style={[styles.macroFill, { backgroundColor: macro.color, width: `${macro.percent}%` }]} />
+                <View style={styles.nutrientMain}>
+                  <View style={styles.nutrientTopRow}>
+                    <Text style={styles.nutrientLabel}>{macro.label}</Text>
+                    <Text style={styles.nutrientPercent}>
+                      {macro.value} • {macro.percent}%
+                    </Text>
+                  </View>
+                  <View style={styles.nutrientTrack}>
+                    <View
+                      style={[
+                        styles.nutrientFill,
+                        { backgroundColor: macro.color, width: `${Math.min(macro.percent, 100)}%` },
+                      ]}
+                    />
+                  </View>
                 </View>
               </View>
             ))}
@@ -98,22 +94,20 @@ export function FoodNutritionDetail({ onAddToLog, onEditIngredients }: FoodNutri
           <View style={styles.insightInner}>
             <SvgIcon height={26} source={svgIcons.aiInsight} width={26} />
             <View style={styles.insightCopy}>
-              <Text style={styles.insightTitle}>AI Nutritional Insight</Text>
-              <Text style={styles.insightText}>
-                Phở Bò is an excellent source of lean protein and collagen from bone broth. To optimize your glycemic
-                response, consider adding extra bean sprouts for fiber.
-              </Text>
+              <Text style={styles.insightTitle}>Recipe Summary</Text>
+              <Text style={styles.insightText}>{detail.description}</Text>
             </View>
           </View>
         </View>
 
         <View style={[styles.card, styles.microCard]}>
-          <Text style={styles.sectionTitle}>Micronutrients & Minerals</Text>
+          <Text style={styles.sectionTitle}>Nutrition & Minerals</Text>
+          <Text style={styles.sectionHint}>Ingredients used for this recipe</Text>
           <View style={styles.microList}>
-            {micronutrients.map(([label, value, color]) => (
-              <View key={label} style={styles.microRow}>
-                <Text style={styles.microLabel}>{label}</Text>
-                <Text style={[styles.microValue, { color }]}>{value}</Text>
+            {detail.ingredients.map((ingredient) => (
+              <View key={`${ingredient.ingredient}-${ingredient.quantity ?? ''}`} style={styles.microRow}>
+                <Text style={styles.microLabel}>{ingredient.ingredient}</Text>
+                <Text style={styles.microValue}>{ingredient.quantity ?? 'To taste'}</Text>
               </View>
             ))}
           </View>
@@ -143,12 +137,14 @@ export function FoodNutritionDetail({ onAddToLog, onEditIngredients }: FoodNutri
                   }}
                   style={[styles.dropdownOption, selectedMeal === option && styles.dropdownOptionActive]}
                 >
-                  <Text style={[styles.dropdownText, selectedMeal === option && styles.dropdownTextActive]}>{option}</Text>
+                  <Text style={[styles.dropdownText, selectedMeal === option && styles.dropdownTextActive]}>
+                    {formatMealLabel(option, currentMeal)}
+                  </Text>
                 </Pressable>
               ))}
             </View>
           ) : null}
-          <Pressable accessibilityRole="button" onPress={onAddToLog} style={styles.addButton}>
+          <Pressable accessibilityRole="button" onPress={() => onAddToLog?.(selectedMeal)} style={styles.addButton}>
             <Svg height="100%" style={styles.addButtonGradient} width="100%">
               <Defs>
                 <LinearGradient id="addButtonBlackGradient" x1="0" x2="1" y1="0" y2="1">
@@ -176,18 +172,101 @@ export function FoodNutritionDetail({ onAddToLog, onEditIngredients }: FoodNutri
   );
 }
 
-export function FoodNutritionHeader({ onBack }: { onBack: () => void }) {
+export function FoodNutritionHeader({ onBack, title = 'Food Nutrition Detail' }: { onBack: () => void; title?: string }) {
   return (
     <View style={styles.header}>
-      <Pressable accessibilityLabel="Back to Add Snack" onPress={onBack} style={styles.headerButton}>
+      <Pressable accessibilityLabel="Back" onPress={onBack} style={styles.headerButton}>
         <Text style={styles.backIcon}>‹</Text>
       </Pressable>
-      <Text style={styles.headerTitle}>Food Nutrition Detail</Text>
+      <Text style={styles.headerTitle}>{title}</Text>
       <Pressable accessibilityLabel="Save recipe as favorite" style={styles.headerButton}>
         <SvgIcon height={19} source={svgIcons.favoriteDetail} width={20} />
       </Pressable>
     </View>
   );
+}
+
+function buildRecipeDetail(recipe?: Recipe) {
+  const json = recipe?.jsonData;
+  const calories = json?.calories ?? 450;
+  const proteins = json?.proteins ?? 28;
+  const carbs = json?.carbs ?? 52;
+  const fats = json?.fats ?? 14;
+  const macroTotal = Math.max(proteins * 4 + carbs * 4 + fats * 9, 1);
+  const categories = json?.category ?? ['Vietnamese Cuisine'];
+  const serveTo = json?.serveTo ?? 1;
+  const cookTime = json?.cookTime ? ` • ${json.cookTime}m` : '';
+  const title = json?.recipeName ?? recipe?.recipeName ?? 'Pho Bo Beef Noodle Soup';
+  const mealType = titleCase(json?.mealType ?? 'lunch');
+
+  return {
+    badge: categories[0] ?? 'Recipe',
+    calories,
+    description: json?.description ?? 'Traditional Vietnamese beef noodle soup with a balanced serving of protein, carbohydrates, and fats.',
+    imageSource: recipe?.imageUrl ? { uri: recipe.imageUrl } : fallbackImage,
+    ingredients:
+      json?.ingredients && json.ingredients.length > 0
+        ? json.ingredients
+        : [{ ingredient: 'Ingredients are not available yet', quantity: 'Recipe data' }],
+    macros: [
+      {
+        backgroundColor: '#CFFBE4',
+        color: colors.primary,
+        icon: svgIcons.proteinLarge,
+        label: 'Protein',
+        percent: Math.round((proteins * 4 * 100) / macroTotal),
+        value: `${proteins}g`,
+      },
+      {
+        backgroundColor: '#FEF3C7',
+        color: colors.accent,
+        icon: svgIcons.caloriesLarge,
+        label: 'Carbs',
+        percent: Math.round((carbs * 4 * 100) / macroTotal),
+        value: `${carbs}g`,
+      },
+      {
+        backgroundColor: '#DBEAFE',
+        color: '#3B82F6',
+        icon: svgIcons.waterLarge,
+        label: 'Fats',
+        percent: Math.round((fats * 9 * 100) / macroTotal),
+        value: `${fats}g`,
+      },
+    ],
+    subtitle: `${mealType} • ${serveTo} serving${serveTo === 1 ? '' : 's'}${cookTime}`,
+    title,
+  };
+}
+
+function titleCase(value: string) {
+  return value
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+    .join(' ');
+}
+
+function getCurrentMealOption(date: Date): MealOption {
+  const hour = date.getHours();
+
+  if (hour >= 5 && hour < 11) {
+    return 'Breakfast';
+  }
+
+  if (hour >= 11 && hour < 15) {
+    return 'Lunch';
+  }
+
+  if (hour >= 17 && hour < 22) {
+    return 'Dinner';
+  }
+
+  return 'Snack';
+}
+
+function formatMealLabel(meal: MealOption, currentMeal: MealOption) {
+  return meal === currentMeal ? `${meal} (Now)` : meal;
 }
 
 const styles = StyleSheet.create({
@@ -246,8 +325,8 @@ const styles = StyleSheet.create({
   calorieValue: {
     color: '#006C49',
     fontFamily: fontFamily.manropeExtraBold,
-    fontWeight: undefined,
     fontSize: 60,
+    fontWeight: undefined,
     lineHeight: 70,
     marginTop: 4,
   },
@@ -282,21 +361,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
   },
-  foodSubtitle: {
-    color: 'rgba(255,255,255,0.82)',
-    ...font.medium,
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 2,
-  },
-  foodTitle: {
-    color: '#FFFFFF',
-    fontFamily: fontFamily.manropeExtraBold,
-    fontWeight: undefined,
-    fontSize: 36,
-    lineHeight: 44,
-    marginTop: 8,
-  },
   dropdownMenu: {
     backgroundColor: colors.surface,
     borderColor: '#E3E8F8',
@@ -319,6 +383,21 @@ const styles = StyleSheet.create({
   },
   dropdownTextActive: {
     color: '#006C49',
+  },
+  foodSubtitle: {
+    color: 'rgba(255,255,255,0.82)',
+    ...font.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 2,
+  },
+  foodTitle: {
+    color: '#FFFFFF',
+    fontFamily: fontFamily.manropeExtraBold,
+    fontSize: 36,
+    fontWeight: undefined,
+    lineHeight: 44,
+    marginTop: 8,
   },
   header: {
     alignItems: 'center',
@@ -411,38 +490,53 @@ const styles = StyleSheet.create({
     fontSize: 13,
     letterSpacing: 1,
   },
-  macroFill: {
+  nutrientCard: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: spacing.lg,
+    padding: 16,
+  },
+  nutrientFill: {
     borderRadius: 999,
     height: '100%',
   },
-  macroLabel: {
+  nutrientIcon: {
+    alignItems: 'center',
+    borderRadius: 8,
+    height: 50,
+    justifyContent: 'center',
+    width: 50,
+  },
+  nutrientLabel: {
     color: colors.ink,
     ...font.bold,
     fontSize: 14,
   },
-  macroList: {
-    gap: 22,
-    marginTop: 28,
+  nutrientList: {
+    gap: spacing.lg,
+    marginTop: spacing.lg,
   },
-  macroPercent: {
-    color: colors.inkMuted,
-    ...font.medium,
+  nutrientMain: {
+    flex: 1,
   },
-  macroRow: {
+  nutrientPercent: {
+    color: colors.ink,
+    ...font.semiBold,
+    fontSize: 12,
+  },
+  nutrientTopRow: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 10,
   },
-  macroTrack: {
-    backgroundColor: '#EEF2FF',
+  nutrientTrack: {
+    backgroundColor: colors.accentSoft,
     borderRadius: 999,
-    height: 12,
+    height: 6,
+    marginTop: spacing.sm,
     overflow: 'hidden',
-  },
-  macroValue: {
-    ...font.bold,
-    fontSize: 14,
   },
   mealSelect: {
     alignItems: 'center',
@@ -465,10 +559,13 @@ const styles = StyleSheet.create({
   microLabel: {
     color: colors.inkMuted,
     ...font.regular,
+    flex: 1,
     fontSize: 16,
+    lineHeight: 22,
+    paddingRight: 16,
   },
   microList: {
-    marginTop: 22,
+    marginTop: 16,
   },
   microRow: {
     alignItems: 'center',
@@ -479,8 +576,11 @@ const styles = StyleSheet.create({
     paddingVertical: 15,
   },
   microValue: {
+    color: colors.ink,
     ...font.bold,
-    fontSize: 16,
+    flexShrink: 1,
+    fontSize: 15,
+    textAlign: 'right',
   },
   overline: {
     color: colors.inkMuted,
@@ -507,6 +607,12 @@ const styles = StyleSheet.create({
   },
   screen: {
     paddingBottom: 2,
+  },
+  sectionHint: {
+    color: colors.inkMuted,
+    ...font.regular,
+    fontSize: 14,
+    marginTop: 6,
   },
   sectionTitle: {
     color: colors.ink,
