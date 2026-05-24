@@ -10,7 +10,7 @@ import type {
   UpsertDailyLogInput,
 } from './types';
 
-const DEFAULT_API_URL = 'http://10.0.2.2:4000/api';
+const DEFAULT_API_URL = 'http://localhost:4000/api';
 
 type ApiClientOptions = {
   baseUrl?: string;
