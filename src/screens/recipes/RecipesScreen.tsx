@@ -9,7 +9,7 @@ import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
 
-const recipeFilters = ['All Recipes', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
+const recipeFilters = ['All Recipes', 'My Recipes', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 const font = {
   regular: { fontFamily: fontFamily.regular, fontWeight: undefined },
@@ -42,7 +42,8 @@ export function RecipesScreen({ onOpenRecipe, recipes }: RecipesScreenProps) {
   );
   const visibleRecipes = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
-    const activeMealType = activeFilter === 'All Recipes' ? null : activeFilter.toLowerCase();
+    const activeMealType =
+      activeFilter === 'All Recipes' || activeFilter === 'My Recipes' ? null : activeFilter.toLowerCase();
 
     return recipes.filter((recipe) => {
       const title = getRecipeTitle(recipe).toLowerCase();
@@ -54,9 +55,10 @@ export function RecipesScreen({ onOpenRecipe, recipes }: RecipesScreenProps) {
         title.includes(normalizedSearch) ||
         description.includes(normalizedSearch) ||
         categories.includes(normalizedSearch);
-      const matchesFilter = !activeMealType || mealType === activeMealType;
+      const matchesMealFilter = !activeMealType || mealType === activeMealType;
+      const matchesOwnership = activeFilter !== 'My Recipes' || (!recipe.isDefault && !!recipe.uid);
 
-      return matchesSearch && matchesFilter;
+      return matchesSearch && matchesMealFilter && matchesOwnership;
     });
   }, [activeFilter, recipes, searchQuery]);
 

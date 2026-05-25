@@ -121,6 +121,14 @@ export function LogScreen({
         })}
       </ScrollView>
 
+      <Pressable accessibilityRole="button" onPress={onAddSnack} style={styles.addSnackCard}>
+        <View style={styles.addSnackCircle}>
+          <SvgIcon height={14} source={svgIcons.add} width={14} />
+        </View>
+        <Text style={styles.addSnackTitle}>Add Snack</Text>
+        <Text style={styles.addSnackCopy}>Keep your metabolism active</Text>
+      </Pressable>
+
       {visibleMealPlans.map((mealPlan) => {
         const card = buildMealLogCard(mealPlan);
         const detailRecipe = buildMealPlanDetailRecipe(mealPlan);
@@ -133,14 +141,6 @@ export function LogScreen({
           />
         );
       })}
-
-      <Pressable accessibilityRole="button" onPress={onAddSnack} style={styles.addSnackCard}>
-        <View style={styles.addSnackCircle}>
-          <SvgIcon height={14} source={svgIcons.add} width={14} />
-        </View>
-        <Text style={styles.addSnackTitle}>Add Snack</Text>
-        <Text style={styles.addSnackCopy}>Keep your metabolism active</Text>
-      </Pressable>
 
       <HydrationLogCard waterMl={dailyLog?.waterMl ?? 0} />
     </View>
@@ -280,6 +280,7 @@ function buildMealPlanDetailRecipe(mealPlan: MealPlan): Recipe | null {
     createdAt: mealPlan.createdAt,
     id: mealPlan.recipeId ?? mealPlan.id,
     imageUrl: mealPlan.snapshotImageUrl,
+    isDeletedFromRecipes: true,
     isDefault: true,
     jsonData: mealPlan.snapshotJsonData,
     recipeName: mealPlan.snapshotJsonData.recipeName ?? mealPlan.snapshotRecipeName,

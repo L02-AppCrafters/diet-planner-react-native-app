@@ -1,5 +1,5 @@
-import { useRef, useState } from 'react';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
@@ -16,7 +16,6 @@ import { fontFamily } from '../../theme/typography';
 import { AppTab } from '../../types/navigation';
 import { DailyLog, MealPlan, Recipe } from '../../services/api';
 
-const lunchImage = require('../../../assets/lunch.png');
 const waterGoalLiters = 2.5;
 const waterCupLiters = 0.5;
 const waterCups = Array.from({ length: waterGoalLiters / waterCupLiters }, (_, index) => index);
@@ -216,7 +215,18 @@ export function HomeScreen({
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
         >
-          {activeTab === 'Home' ? <HomeContent goal={goal} metrics={metrics} onAddWater={onAddWater} /> : null}
+          {activeTab === 'Home' ? (
+            <HomeContent
+              goal={goal}
+              metrics={metrics}
+              onAddWater={onAddWater}
+              onOpenRecipe={(recipe) => {
+                openRecipeDetail(recipe);
+                onTabChange('Recipes');
+              }}
+              recipes={recipes}
+            />
+          ) : null}
           {activeTab === 'Log' && logRoute === 'log' ? (
             <LogScreen
               calorieGoal={metrics.calorieGoal}
@@ -344,10 +354,14 @@ function HomeContent({
   goal,
   metrics,
   onAddWater,
+  onOpenRecipe,
+  recipes,
 }: {
   goal: HomeScreenProps['goal'];
   metrics: HomeMetrics;
   onAddWater: () => void | Promise<void>;
+  onOpenRecipe: (recipe: Recipe) => void;
+  recipes: Recipe[];
 }) {
   const calorieGoal = Math.max(metrics.calorieGoal, 1);
   const goalRangeMin = Math.round(calorieGoal * 0.8);
@@ -413,10 +427,58 @@ function HomeContent({
 
       <CalorieRing goal={goal} summary={{ consumed: metrics.calories, goal: calorieGoal }} />
       <WaterTrackerCard onAddWater={onAddWater} waterMl={metrics.waterMl} />
-      <MealCard />
+      <HomeEditorsChoiceCard onPress={onOpenRecipe} recipes={recipes} />
       <InsightCard />
       <WeeklyOverview calorieGoal={calorieGoal} goal={goal} weeklyCalories={metrics.weeklyCalories} />
     </>
+  );
+}
+
+function HomeEditorsChoiceCard({ onPress, recipes }: { onPress: (recipe: Recipe) => void; recipes: Recipe[] }) {
+  const [featuredRecipeId, setFeaturedRecipeId] = useState<string | null>(null);
+  const defaultRecipes = useMemo(() => recipes.filter((recipe) => recipe.isDefault), [recipes]);
+  const featuredRecipe = useMemo(
+    () => defaultRecipes.find((recipe) => recipe.id === featuredRecipeId) ?? defaultRecipes[0] ?? null,
+    [defaultRecipes, featuredRecipeId],
+  );
+
+  useEffect(() => {
+    if (defaultRecipes.length === 0) {
+      setFeaturedRecipeId(null);
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * defaultRecipes.length);
+    setFeaturedRecipeId(defaultRecipes[randomIndex].id);
+  }, [defaultRecipes]);
+
+  if (!featuredRecipe) {
+    return null;
+  }
+
+  return (
+    <Pressable accessibilityRole="button" onPress={() => onPress(featuredRecipe)} style={styles.homeFeaturedCard}>
+      <Image source={{ uri: featuredRecipe.imageUrl }} style={styles.homeFeaturedImage} />
+      <View style={styles.homeFeaturedOverlay} />
+      <Text style={styles.homeFeaturedTag}>EDITOR'S CHOICE</Text>
+      <View style={styles.homeFeaturedContent}>
+        <Text style={styles.homeFeaturedTitle}>{featuredRecipe.jsonData.recipeName ?? featuredRecipe.recipeName}</Text>
+        <View style={styles.homeFeaturedMetaRow}>
+          <HomeFeaturedMeta icon={svgIcons.time} label={featuredRecipe.jsonData.cookTime ? `${featuredRecipe.jsonData.cookTime}m` : 'Any'} />
+          <HomeFeaturedMeta icon={svgIcons.calories} label={`${featuredRecipe.jsonData.calories ?? 0} kcal`} />
+          <HomeFeaturedMeta icon={svgIcons.proteinMetric} label={`${featuredRecipe.jsonData.proteins ?? 0}g Protein`} />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function HomeFeaturedMeta({ icon, label }: { icon: string; label: string }) {
+  return (
+    <View style={styles.homeFeaturedMetaItem}>
+      <SvgIcon height={12} source={icon} width={12} />
+      <Text style={styles.homeFeaturedMeta}>{label}</Text>
+    </View>
   );
 }
 
@@ -607,29 +669,6 @@ function WaterCup({ fillLevel }: { fillLevel: number }) {
   return (
     <View style={styles.cup}>
       <View style={[styles.cupFill, { height: `${fillLevel * 100}%` }]} />
-    </View>
-  );
-}
-
-function MealCard() {
-  return (
-    <View style={styles.mealCard}>
-      <ImageBackground source={lunchImage} resizeMode="cover" style={styles.mealImage}>
-        <View style={styles.mealShade} />
-        <Text style={styles.mealType}>Lunch</Text>
-      </ImageBackground>
-      <View style={styles.mealBody}>
-        <View style={styles.mealTitleRow}>
-          <Text numberOfLines={1} style={styles.mealTitle}>
-            Grilled Chicken Salad
-          </Text>
-          <Text style={styles.mealCalories}>420 kcal</Text>
-        </View>
-        <View style={styles.nutritionRow}>
-          <Text style={[styles.nutritionPill, { color: nutritionColors.PROTEIN }]}>P: 35G</Text>
-          <Text style={[styles.nutritionPill, { color: nutritionColors.FAT }]}>F: 18G</Text>
-        </View>
-      </View>
     </View>
   );
 }
@@ -1287,6 +1326,61 @@ const styles = StyleSheet.create({
     ...font.bold,
     fontSize: 12,
     lineHeight: 18,
+  },
+  homeFeaturedCard: {
+    borderRadius: 12,
+    height: 420,
+    justifyContent: 'space-between',
+    marginTop: 36,
+    overflow: 'hidden',
+    padding: 18,
+  },
+  homeFeaturedContent: {
+    zIndex: 1,
+  },
+  homeFeaturedImage: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 12,
+    resizeMode: 'cover',
+  },
+  homeFeaturedMeta: {
+    color: colors.surface,
+    ...font.semiBold,
+    fontSize: 12,
+  },
+  homeFeaturedMetaItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  homeFeaturedMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 18,
+    marginTop: 16,
+  },
+  homeFeaturedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(13,18,27,0.28)',
+  },
+  homeFeaturedTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    color: colors.surface,
+    ...font.bold,
+    fontSize: 10,
+    overflow: 'hidden',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    zIndex: 1,
+  },
+  homeFeaturedTitle: {
+    color: colors.surface,
+    ...font.manropeExtraBold,
+    fontSize: 30,
+    lineHeight: 38,
   },
   mealBody: {
     paddingHorizontal: 22,

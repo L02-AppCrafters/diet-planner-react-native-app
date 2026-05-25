@@ -34,6 +34,7 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
   const detail = buildRecipeDetail(recipe);
   const mealLabel = formatMealLabel(selectedMeal, currentMeal);
   const isUserRecipe = Boolean(recipe && !recipe.isDefault && recipe.uid);
+  const isRecipeDeleted = Boolean(recipe?.isDeletedFromRecipes);
 
   return (
     <View style={styles.screen}>
@@ -116,12 +117,22 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
         </View>
 
         <View style={styles.logCard}>
+          {isRecipeDeleted ? (
+            <View style={styles.deletedInfoCard}>
+              <View style={styles.deletedInfoIconWrap}>
+                <Text style={styles.deletedInfoIcon}>i</Text>
+              </View>
+              <Text style={styles.deletedInfoText}>
+                This recipe has been deleted from Recipes. You can no longer add it to Log.
+              </Text>
+            </View>
+          ) : null}
           <Text style={styles.logHeading}>LOG THIS MEAL</Text>
           <Pressable
             accessibilityRole="button"
             accessibilityState={{ expanded: isMealDropdownOpen }}
-            onPress={() => setIsMealDropdownOpen((current) => !current)}
-            style={styles.mealSelect}
+            onPress={() => !isRecipeDeleted && setIsMealDropdownOpen((current) => !current)}
+            style={[styles.mealSelect, isRecipeDeleted && styles.disabledControl]}
           >
             <SvgIcon height={20} source={svgIcons.timeRound} width={20} />
             <Text style={styles.mealSelectText}>{mealLabel}</Text>
@@ -146,7 +157,12 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
               ))}
             </View>
           ) : null}
-          <Pressable accessibilityRole="button" onPress={() => onAddToLog?.(selectedMeal)} style={styles.addButton}>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isRecipeDeleted}
+            onPress={() => !isRecipeDeleted && onAddToLog?.(selectedMeal)}
+            style={[styles.addButton, isRecipeDeleted && styles.disabledControl]}
+          >
             <Svg height="100%" style={styles.addButtonGradient} width="100%">
               <Defs>
                 <LinearGradient id="addButtonBlackGradient" x1="0" x2="1" y1="0" y2="1">
@@ -163,10 +179,15 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
             <>
               <Text style={styles.quickHeading}>QUICK ACTIONS</Text>
               <View style={styles.quickActions}>
-                <Pressable accessibilityRole="button" onPress={onEditRecipe} style={[styles.actionPill, styles.editPill]}>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={isRecipeDeleted}
+                  onPress={onEditRecipe}
+                  style={[styles.actionPill, styles.editPill, isRecipeDeleted && styles.disabledControl]}
+                >
                   <Text style={styles.editText}>{recipe.isDefault ? 'Copy & Edit' : 'Edit'}</Text>
                 </Pressable>
-                {isUserRecipe ? (
+                {isUserRecipe && !isRecipeDeleted ? (
                   <Pressable accessibilityRole="button" onPress={onDeleteRecipe} style={[styles.actionPill, styles.deletePill]}>
                     <Text style={styles.deleteText}>Delete</Text>
                   </Pressable>
@@ -306,6 +327,42 @@ const styles = StyleSheet.create({
     ...font.bold,
     fontSize: 16,
     zIndex: 1,
+  },
+  deletedInfoCard: {
+    alignItems: 'center',
+    backgroundColor: '#ECFDF3',
+    borderColor: '#86EFAC',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  deletedInfoIcon: {
+    color: '#166534',
+    ...font.bold,
+    fontSize: 13,
+    lineHeight: 16,
+  },
+  deletedInfoIconWrap: {
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    borderRadius: 999,
+    height: 24,
+    justifyContent: 'center',
+    width: 24,
+  },
+  deletedInfoText: {
+    color: '#166534',
+    flex: 1,
+    ...font.medium,
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  disabledControl: {
+    opacity: 0.45,
   },
   backIcon: {
     color: colors.primary,

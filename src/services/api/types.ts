@@ -90,6 +90,7 @@ export type CreateMealPlanInput = {
 
 export type Recipe = {
   id: string;
+  isDeletedFromRecipes?: boolean;
   jsonData: {
     calories?: number;
     carbs?: number;

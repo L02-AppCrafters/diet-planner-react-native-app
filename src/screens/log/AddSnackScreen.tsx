@@ -32,11 +32,13 @@ const greekYogurtImage = require('../../../assets/greek-yogurt.png');
 const matchaLatteImage = require('../../../assets/matcha-latte.png');
 const scanBarcodeBackground = require('../../../assets/scan-barcode-background.png');
 
-type MealTab = 'Breakfast' | 'Lunch' | 'Dinner';
+type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+type MealTab = 'All Recipes' | MealType;
 type RecentRecipeItem = {
   calories: number;
   createdAt: string;
   image: ImageSourcePropType;
+  mealType: MealType;
   recipe: Recipe;
   source: string;
   title: string;
@@ -50,12 +52,12 @@ export function AddSnackScreen({
 }: {
   onLogMeal?: () => void;
   onOpenDetail?: () => void;
-  onQuickLogRecipe?: (recipe: Recipe, mealType: MealTab) => void | Promise<void>;
+  onQuickLogRecipe?: (recipe: Recipe, mealType: MealType) => void | Promise<void>;
   recentMealPlans: MealPlan[];
 }) {
   const [searchText, setSearchText] = useState('');
-  const [activeMeal, setActiveMeal] = useState<MealTab>('Breakfast');
-  const recentRecipes = filterRecentRecipeItems(buildRecentRecipeItems(recentMealPlans), searchText);
+  const [activeMeal, setActiveMeal] = useState<MealTab>('All Recipes');
+  const recentRecipes = filterRecentRecipeItems(buildRecentRecipeItems(recentMealPlans), searchText, activeMeal);
   const recentSelections = recentRecipes.slice(0, 5);
   const historyItems = recentRecipes;
 
@@ -77,17 +79,21 @@ export function AddSnackScreen({
       </View>
 
       <View style={styles.segmented}>
-        {(['Breakfast', 'Lunch', 'Dinner'] as const).map((item) => (
-          <Pressable
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeMeal === item }}
-            key={item}
-            onPress={() => setActiveMeal(item)}
-            style={[styles.segmentItem, activeMeal === item && styles.segmentItemActive]}
-          >
-            <Text style={[styles.segmentText, activeMeal === item && styles.segmentTextActive]}>{item}</Text>
-          </Pressable>
-        ))}
+        <ScrollView contentContainerStyle={styles.segmentedScrollContent} horizontal showsHorizontalScrollIndicator={false}>
+          {(['All Recipes', 'Breakfast', 'Lunch', 'Dinner', 'Snack'] as const).map((item) => (
+            <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeMeal === item }}
+              key={item}
+              onPress={() => setActiveMeal(item)}
+              style={[styles.segmentItem, activeMeal === item && styles.segmentItemActive]}
+            >
+              <Text numberOfLines={1} style={[styles.segmentText, activeMeal === item && styles.segmentTextActive]}>
+                {item}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
       <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCard}>
@@ -122,7 +128,7 @@ export function AddSnackScreen({
             <RecentMealCard
               item={item}
               key={`recent-${item.recipe.id}-${item.createdAt}-${index}`}
-              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal)}
+              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal === 'All Recipes' ? item.mealType : activeMeal)}
               onPress={onOpenDetail}
             />
           ))}
@@ -146,7 +152,7 @@ export function AddSnackScreen({
             <RecentMealCard
               item={item}
               key={`history-${item.recipe.id}-${item.createdAt}-${index}`}
-              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal)}
+              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal === 'All Recipes' ? item.mealType : activeMeal)}
               onPress={onOpenDetail}
             />
           ))}
@@ -221,14 +227,15 @@ function RecentMealCard({
   );
 }
 
-function filterRecentRecipeItems(items: RecentRecipeItem[], searchText: string) {
+function filterRecentRecipeItems(items: RecentRecipeItem[], searchText: string, activeMeal: MealTab) {
   const query = normalizeSearchText(searchText);
+  const mealFilteredItems = activeMeal === 'All Recipes' ? items : items.filter((item) => item.mealType === activeMeal);
 
   if (!query) {
-    return items;
+    return mealFilteredItems;
   }
 
-  return items.filter((item) => {
+  return mealFilteredItems.filter((item) => {
     const recipe = item.recipe;
     const json = recipe.jsonData;
     const searchable = [
@@ -259,11 +266,20 @@ function buildRecentRecipeItems(mealPlans: MealPlan[]): RecentRecipeItem[] {
         calories: recipe.jsonData.calories ?? 0,
         createdAt: mealPlan.createdAt,
         image: recipe.imageUrl ? { uri: recipe.imageUrl } : avocadoToastImage,
+        mealType: titleCase(mealPlan.mealType) as MealType,
         recipe,
         source: recipe.jsonData.category?.[0] ?? 'Recipe Log',
         title: recipe.jsonData.recipeName ?? recipe.recipeName,
       };
     });
+}
+
+function titleCase(value: string) {
+  if (!value) {
+    return 'Snack';
+  }
+
+  return `${value.charAt(0).toUpperCase()}${value.slice(1).toLowerCase()}`;
 }
 
 function DiscoverCard({
@@ -525,16 +541,21 @@ const styles = StyleSheet.create({
   segmented: {
     backgroundColor: colors.accentSoft,
     borderRadius: 16,
-    flexDirection: 'row',
     marginTop: 24,
     padding: 5,
+  },
+  segmentedScrollContent: {
+    alignItems: 'center',
+    columnGap: 6,
+    paddingRight: 6,
   },
   segmentItem: {
     alignItems: 'center',
     borderRadius: 11,
-    flex: 1,
+    minWidth: 88,
     height: 50,
     justifyContent: 'center',
+    paddingHorizontal: 12,
   },
   segmentItemActive: {
     backgroundColor: colors.surface,
