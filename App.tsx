@@ -98,6 +98,10 @@ function mapUserToProfile(user: Awaited<ReturnType<ApiClient['me']>>, fallback: 
 }
 
 export default function App() {
+  useEffect(() => {
+    console.log('[NutriPlanner] EXPO_PUBLIC_API_URL =', process.env.EXPO_PUBLIC_API_URL);
+  }, []);
+
   const [currentFlow, setCurrentFlow] = useState<AppFlow>('OnboardingGoal');
   const [activeTab, setActiveTab] = useState<AppTab>('Home');
   const accessTokenRef = useRef<string | null>(null);

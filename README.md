@@ -117,8 +117,21 @@ Initialize the build configuration:
 ```
 eas build:configure
 ```
+
+Set up environment for build:
+
+```
+eas env:create --name EXPO_PUBLIC_API_URL --value "https://diet-planner-server.onrender.com/api" --environment preview --visibility plaintext
+```
+
+Check the availability:
+
+```
+eas env:list --environment preview
+```
+
 Build the app:
 
 ```
-eas build -p android --profile preview
+eas build --platform android --profile preview --clear-cache
 ```
