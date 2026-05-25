@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Platform, Pressable, StatusBar, StyleSheet, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { Recipe } from '../../services/api';
 import { colors } from '../../theme/colors';
@@ -40,24 +40,45 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
   );
   const [steps, setSteps] = useState(recipe.jsonData.steps?.join('\n') ?? '');
 
+  const restoreSystemBars = () => {
+    if (Platform.OS !== 'android') {
+      return;
+    }
+
+    StatusBar.setHidden(false, 'none');
+    StatusBar.setTranslucent(false);
+    StatusBar.setBackgroundColor(colors.header);
+    StatusBar.setBarStyle('dark-content');
+  };
+
+  useEffect(() => {
+    restoreSystemBars();
+  }, []);
+
   const pickImage = async () => {
     setImageError('');
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
       setImageError('Photo library permission is required to upload a recipe image.');
+      restoreSystemBars();
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      mediaTypes: ['images'],
-      quality: 0.86,
-    });
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        mediaTypes: ['images'],
+        quality: 0.86,
+      });
 
-    if (!result.canceled && result.assets[0]?.uri) {
-      setImageUrl(result.assets[0].uri);
+      if (!result.canceled && result.assets[0]?.uri) {
+        setImageUrl(result.assets[0].uri);
+      }
+    } finally {
+      // Image picker may alter Android system bar/window flags when returning.
+      restoreSystemBars();
     }
   };
 
