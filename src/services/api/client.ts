@@ -6,6 +6,8 @@ import type {
   MealPlan,
   PaginatedFoodNutrition,
   Recipe,
+  RecognizeFoodInput,
+  RecognizeFoodResult,
   UpdateRecipeInput,
   UpsertDailyLogInput,
 } from './types';
@@ -155,6 +157,14 @@ export class ApiClient {
 
   async createMealPlan(input: CreateMealPlanInput) {
     return this.request<MealPlan>('/meal-plans', {
+      auth: true,
+      body: input,
+      method: 'POST',
+    });
+  }
+
+  async recognizeFood(input: RecognizeFoodInput) {
+    return this.request<RecognizeFoodResult>('/ai/recognize-food', {
       auth: true,
       body: input,
       method: 'POST',

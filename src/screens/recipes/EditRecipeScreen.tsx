@@ -39,6 +39,7 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
     recipe.jsonData.ingredients?.map((item) => `${item.ingredient}${item.quantity ? ` - ${item.quantity}` : ''}`).join('\n') ?? '',
   );
   const [steps, setSteps] = useState(recipe.jsonData.steps?.join('\n') ?? '');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const restoreSystemBars = () => {
     if (Platform.OS !== 'android') {
@@ -67,7 +68,7 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
+        allowsEditing: false,
         aspect: [4, 3],
         mediaTypes: ['images'],
         quality: 0.86,
@@ -82,7 +83,11 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
     }
   };
 
-  const save = () => {
+  const save = async () => {
+    if (isSubmitting) {
+      return;
+    }
+
     const cleanTitle = title.trim() || 'Untitled Recipe';
     const nextRecipe: Recipe = {
       ...recipe,
@@ -104,7 +109,12 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
       recipeName: cleanTitle,
     };
 
-    onSave(nextRecipe);
+    setIsSubmitting(true);
+    try {
+      await onSave(nextRecipe);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -186,11 +196,18 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
       </View>
 
       <View style={styles.actions}>
-        <Pressable accessibilityRole="button" onPress={onCancel} style={[styles.actionButton, styles.cancelButton]}>
+        <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={onCancel} style={[styles.actionButton, styles.cancelButton, isSubmitting && styles.actionButtonDisabled]}>
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
-        <Pressable accessibilityRole="button" onPress={save} style={[styles.actionButton, styles.saveButton]}>
-          <Text style={styles.saveText}>{mode === 'create' ? 'Create Recipe' : 'Save Changes'}</Text>
+        <Pressable accessibilityRole="button" disabled={isSubmitting} onPress={() => void save()} style={[styles.actionButton, styles.saveButton, isSubmitting && styles.actionButtonDisabled]}>
+          {isSubmitting ? (
+            <View style={styles.loadingRow}>
+              <Text style={styles.loadingSpinner}>◌</Text>
+              <Text style={styles.saveText}>{mode === 'create' ? 'Creating...' : 'Saving...'}</Text>
+            </View>
+          ) : (
+            <Text style={styles.saveText}>{mode === 'create' ? 'Create Recipe' : 'Save Changes'}</Text>
+          )}
         </Pressable>
       </View>
     </View>
@@ -262,6 +279,9 @@ const styles = StyleSheet.create({
     height: 58,
     justifyContent: 'center',
   },
+  actionButtonDisabled: {
+    opacity: 0.72,
+  },
   actions: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -318,6 +338,16 @@ const styles = StyleSheet.create({
   heading: {
     gap: spacing.xs,
     paddingTop: spacing.xl,
+  },
+  loadingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  loadingSpinner: {
+    color: colors.surface,
+    ...font.bold,
+    fontSize: 16,
   },
   input: {
     backgroundColor: colors.accentSoft,

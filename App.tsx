@@ -444,7 +444,8 @@ export default function App() {
       jsonData: recipe.jsonData,
       recipeName: recipe.recipeName,
     };
-    const updatedRecipe = recipe.isDefault
+    const isDraftRecipe = recipe.id.startsWith('draft-') || recipe.uid === null;
+    const updatedRecipe = recipe.isDefault || isDraftRecipe
       ? await api.createRecipe(input)
       : await api.updateRecipe(recipe.id, input);
     const recipeRows = await api.getRecipes();
@@ -462,6 +463,34 @@ export default function App() {
     await api.deleteRecipe(recipe.id);
     setRecipes(await api.getRecipes());
     showSuccessToast('Recipe deleted');
+  };
+  const recognizeFoodFromImage = async (imageBase64: string) => {
+    const { recognized } = await api.recognizeFood({ imageBase64 });
+    const now = new Date().toISOString();
+
+    return {
+      id: `draft-${now}`,
+      uid: null,
+      recipeName: recognized.recipeName,
+      imageUrl: imageBase64,
+      isDefault: false,
+      createdAt: now,
+      updatedAt: now,
+      jsonData: {
+        recipeName: recognized.recipeName,
+        mealType: recognized.mealType,
+        category: recognized.category,
+        cookTime: recognized.cookTime,
+        serveTo: recognized.serveTo,
+        calories: recognized.calories,
+        proteins: recognized.proteins,
+        carbs: recognized.carbs,
+        fats: recognized.fats,
+        description: recognized.description,
+        ingredients: recognized.ingredients,
+        steps: recognized.steps,
+      },
+    } as Recipe;
   };
 
   // 1. Luồng chọn Goal Onboarding
@@ -579,6 +608,7 @@ export default function App() {
         onAddWater={addWater}
         onUpdateWaterTarget={setWaterTargetLiters}
         onDeleteRecipe={deleteUserRecipe}
+        onRecognizeFoodFromImage={recognizeFoodFromImage}
         onUpdateRecipe={updateUserRecipe}
         profileWeight={profile.weight}
         recipes={recipes}
