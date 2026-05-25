@@ -16,9 +16,7 @@ import { fontFamily } from '../../theme/typography';
 import { AppTab } from '../../types/navigation';
 import { DailyLog, MealPlan, Recipe } from '../../services/api';
 
-const waterGoalLiters = 2.5;
 const waterCupLiters = 0.5;
-const waterCups = Array.from({ length: waterGoalLiters / waterCupLiters }, (_, index) => index);
 const nutritionColors = {
   CALS: '#006C49',
   FAT: '#F59E0B',
@@ -67,6 +65,7 @@ type HomeScreenProps = {
   metrics: HomeMetrics;
   onAddRecipeToLog: (recipe: Recipe, mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => Promise<void>;
   onAddWater: () => void | Promise<void>;
+  onUpdateWaterTarget: (nextTargetLiters: number) => void;
   onDeleteRecipe: (recipe: Recipe) => Promise<void>;
   onSelectLogDate: (date: string) => void | Promise<void>;
   onUpdateRecipe: (recipe: Recipe) => Promise<Recipe>;
@@ -77,6 +76,7 @@ type HomeScreenProps = {
   profileWeight: number;
   weeklyLogs: DailyLog[];
   weeklyMealPlans: MealPlan[];
+  waterTargetLiters: number;
 };
 
 export type HomeMetrics = {
@@ -124,6 +124,7 @@ export function HomeScreen({
   metrics,
   onAddRecipeToLog,
   onAddWater,
+  onUpdateWaterTarget,
   onDeleteRecipe,
   onOpenSettings,
   onSelectLogDate,
@@ -134,6 +135,7 @@ export function HomeScreen({
   selectedLogDate,
   weeklyLogs,
   weeklyMealPlans,
+  waterTargetLiters,
 }: HomeScreenProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
@@ -220,6 +222,7 @@ export function HomeScreen({
               goal={goal}
               metrics={metrics}
               onAddWater={onAddWater}
+              waterTargetLiters={waterTargetLiters}
               onOpenRecipe={(recipe) => {
                 openRecipeDetail(recipe);
                 onTabChange('Recipes');
@@ -242,6 +245,7 @@ export function HomeScreen({
               }}
               onSelectDate={onSelectLogDate}
               selectedDate={selectedLogDate}
+              waterTargetLiters={waterTargetLiters}
             />
           ) : null}
           {isAddSnack ? (
@@ -300,6 +304,8 @@ export function HomeScreen({
               goal={goal}
               profileWeight={profileWeight}
               proteinGoal={metrics.proteinGoal}
+              onUpdateWaterTarget={onUpdateWaterTarget}
+              waterTargetLiters={waterTargetLiters}
               weeklyLogs={weeklyLogs}
             />
           ) : null}
@@ -354,12 +360,14 @@ function HomeContent({
   goal,
   metrics,
   onAddWater,
+  waterTargetLiters,
   onOpenRecipe,
   recipes,
 }: {
   goal: HomeScreenProps['goal'];
   metrics: HomeMetrics;
   onAddWater: () => void | Promise<void>;
+  waterTargetLiters: number;
   onOpenRecipe: (recipe: Recipe) => void;
   recipes: Recipe[];
 }) {
@@ -426,7 +434,7 @@ function HomeContent({
       </View>
 
       <CalorieRing goal={goal} summary={{ consumed: metrics.calories, goal: calorieGoal }} />
-      <WaterTrackerCard onAddWater={onAddWater} waterMl={metrics.waterMl} />
+      <WaterTrackerCard onAddWater={onAddWater} waterMl={metrics.waterMl} waterTargetLiters={waterTargetLiters} />
       <HomeEditorsChoiceCard onPress={onOpenRecipe} recipes={recipes} />
       <InsightCard />
       <WeeklyOverview calorieGoal={calorieGoal} goal={goal} weeklyCalories={metrics.weeklyCalories} />
@@ -624,9 +632,18 @@ function CalorieRing({ goal, summary }: { goal: HomeScreenProps['goal']; summary
   );
 }
 
-function WaterTrackerCard({ onAddWater, waterMl }: { onAddWater: () => void | Promise<void>; waterMl: number }) {
+function WaterTrackerCard({
+  onAddWater,
+  waterMl,
+  waterTargetLiters,
+}: {
+  onAddWater: () => void | Promise<void>;
+  waterMl: number;
+  waterTargetLiters: number;
+}) {
   const waterConsumedLiters = waterMl / 1000;
-  const isGoalReached = waterMl >= waterGoalLiters * 1000;
+  const isGoalReached = waterMl >= waterTargetLiters * 1000;
+  const waterCups = Array.from({ length: Math.max(1, Math.round(waterTargetLiters / waterCupLiters)) }, (_, index) => index);
 
   return (
     <View style={styles.waterCard}>
@@ -649,7 +666,7 @@ function WaterTrackerCard({ onAddWater, waterMl }: { onAddWater: () => void | Pr
       </View>
       <View style={styles.waterFooter}>
         <Text style={styles.waterAmount}>
-          {waterConsumedLiters.toFixed(1)}L / {waterGoalLiters.toFixed(1)}L
+          {waterConsumedLiters.toFixed(1)}L / {waterTargetLiters.toFixed(1)}L
         </Text>
         <Pressable
           accessibilityLabel="Add 0.5 liters of water"

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
@@ -19,7 +20,6 @@ const dayLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
 const compactDayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const chartWidth = 300;
 const chartHeight = 160;
-const waterGoalMl = 2500;
 
 type ProgressScreenProps = {
   calorieGoal: number;
@@ -28,6 +28,8 @@ type ProgressScreenProps = {
   goal: 'lose_weight' | 'gain_muscle' | 'healthy_lifestyle' | string;
   profileWeight: number;
   proteinGoal: number;
+  waterTargetLiters: number;
+  onUpdateWaterTarget: (nextTargetLiters: number) => void;
   weeklyLogs: DailyLog[];
 };
 
@@ -42,6 +44,8 @@ type NutrientItem = {
   percent: number;
 };
 
+type AnalyticsInput = Omit<ProgressScreenProps, 'onUpdateWaterTarget'>;
+
 export function ProgressScreen({
   calorieGoal,
   carbsGoal,
@@ -49,6 +53,8 @@ export function ProgressScreen({
   goal,
   profileWeight,
   proteinGoal,
+  waterTargetLiters,
+  onUpdateWaterTarget,
   weeklyLogs,
 }: ProgressScreenProps) {
   const analytics = buildAnalytics({
@@ -58,6 +64,7 @@ export function ProgressScreen({
     goal,
     profileWeight,
     proteinGoal,
+    waterTargetLiters,
     weeklyLogs,
   });
 
@@ -68,7 +75,7 @@ export function ProgressScreen({
       <WeightCard analytics={analytics} />
       <ActivityCard analytics={analytics} />
       <WeeklyCaloriesCard analytics={analytics} />
-      <WaterCard analytics={analytics} />
+      <WaterCard analytics={analytics} onUpdateWaterTarget={onUpdateWaterTarget} />
       <Text style={styles.sectionTitle}>Nutrient Adherence</Text>
       <NutrientAdherenceCard items={analytics.nutrients} />
     </View>
@@ -76,8 +83,17 @@ export function ProgressScreen({
 }
 
 function WeightCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics> }) {
+  const [targetWeight, setTargetWeight] = useState(analytics.targetWeight);
+  const weightDeltaToTarget = analytics.currentWeight - targetWeight;
+  const isAboveTarget = weightDeltaToTarget > 0;
+
   return (
-    <View style={styles.card}>
+    <View>
+      <View style={styles.currentPlanBadge}>
+        <SvgIcon color="#0F7A52" height={14} source={svgIcons.aiInsight} width={14} />
+        <Text style={styles.currentPlanText}>Current Plan: {analytics.goalLabel}</Text>
+      </View>
+      <View style={styles.card}>
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>Weight Over Time</Text>
         <Text style={styles.weekLabel}>THIS WEEK</Text>
@@ -85,36 +101,80 @@ function WeightCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics
       <View style={styles.weightRow}>
         <Text style={styles.weightValue}>{analytics.currentWeight.toFixed(1)} kg</Text>
         <View style={styles.weightDeltaBadge}>
-          <SvgIcon height={10} source={svgIcons.downArrow} width={10} />
-          <Text style={styles.weightDeltaText}>{Math.abs(analytics.weightDelta).toFixed(1)} kg</Text>
+          <View style={isAboveTarget ? styles.deltaArrowUp : undefined}>
+            <SvgIcon height={10} source={svgIcons.downArrow} width={10} />
+          </View>
+          <Text style={styles.weightDeltaText}>{Math.abs(weightDeltaToTarget).toFixed(1)} kg</Text>
         </View>
       </View>
-      <LineChart targetLabel={`TARGET ${analytics.targetWeight.toFixed(0)}KG`} values={analytics.weightValues} />
+      <View style={styles.targetControls}>
+        <Pressable onPress={() => setTargetWeight((prev) => Math.max(20, prev - 0.5))} style={styles.targetAdjustButton}>
+          <Text style={styles.targetAdjustText}>-</Text>
+        </Pressable>
+        <Pressable onPress={() => setTargetWeight((prev) => Math.min(300, prev + 0.5))} style={styles.targetAdjustButton}>
+          <Text style={styles.targetAdjustText}>+</Text>
+        </Pressable>
+        <Pressable onPress={() => setTargetWeight(analytics.currentWeight)} style={styles.targetButton}>
+          <Text style={styles.targetButtonText}>Target {targetWeight.toFixed(1)} kg</Text>
+        </Pressable>
+      </View>
+      <LineChart
+        centerValue={analytics.currentWeight}
+        totalSlots={7}
+        targetLabel={`TARGET ${targetWeight.toFixed(1)}KG`}
+        targetValue={targetWeight}
+        values={analytics.weightValues}
+      />
       <View style={styles.chartDays}>
-        {dayLabels.map((day) => (
-          <Text key={day} style={styles.chartDay}>
+        {compactDayLabels.map((day, index) => (
+          <Text key={`${day}-${index}`} style={styles.chartDay}>
             {day}
           </Text>
         ))}
+      </View>
       </View>
     </View>
   );
 }
 
-function LineChart({ compact, targetLabel, values }: { compact?: boolean; targetLabel?: string; values: number[] }) {
+function LineChart({
+  centerValue,
+  compact,
+  segmentStatuses,
+  totalSlots,
+  targetLabel,
+  targetValue,
+  values,
+}: {
+  centerValue?: number;
+  compact?: boolean;
+  segmentStatuses?: boolean[];
+  totalSlots?: number;
+  targetLabel?: string;
+  targetValue?: number;
+  values: number[];
+}) {
   const width = chartWidth;
   const height = compact ? 122 : chartHeight;
-  const safeValues = values.length > 1 ? values : [0, 0, 0, 0, 0, 0, 0];
-  const max = Math.max(...safeValues, 1);
-  const min = Math.min(...safeValues);
+  const fallbackValue = values[values.length - 1] ?? centerValue ?? 0;
+  const safeValues = values.length > 1 ? values : [fallbackValue, fallbackValue];
+  const min = compact
+    ? Math.max(0, Math.min(...safeValues, targetValue ?? fallbackValue, (centerValue ?? fallbackValue) - 600))
+    : (centerValue ?? fallbackValue) - 10;
+  const max = compact
+    ? Math.max(...safeValues, targetValue ?? fallbackValue, (centerValue ?? fallbackValue) + 600, 1)
+    : (centerValue ?? fallbackValue) + 10;
   const range = Math.max(1, max - min);
+  const xSlots = Math.max(totalSlots ?? safeValues.length, safeValues.length, 2);
   const points = safeValues.map((value, index) => {
-    const x = 16 + ((width - 32) / Math.max(safeValues.length - 1, 1)) * index;
+    const x = 16 + ((width - 32) / Math.max(xSlots - 1, 1)) * index;
     const y = 20 + (height - 44) - ((value - min) / range) * (height - 58);
     return { x, y };
   });
   const line = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
   const area = `${line} L ${points[points.length - 1].x} ${height - 18} L ${points[0].x} ${height - 18} Z`;
+  const hasTargetLine = typeof targetValue === 'number';
+  const targetY = hasTargetLine ? 20 + (height - 44) - ((targetValue - min) / range) * (height - 58) : 0;
 
   return (
     <View style={[styles.chartWrap, compact && styles.chartWrapCompact]}>
@@ -127,15 +187,32 @@ function LineChart({ compact, targetLabel, values }: { compact?: boolean; target
         </Defs>
         <Path d={`M 16 ${height - 18} H ${width - 16}`} stroke="#EEF2F1" strokeWidth="1" />
         <Path d={`M 16 ${height * 0.52} H ${width - 16}`} stroke="#EEF2F1" strokeWidth="1" />
+        {hasTargetLine ? <Path d={`M 16 ${targetY} H ${width - 16}`} stroke="#0F172A" strokeDasharray="4 4" strokeWidth="1.5" /> : null}
         <Path d={area} fill={`url(#${compact ? 'weeklyArea' : 'weightArea'})`} />
-        <Path d={line} fill="none" stroke={colors.primaryMid} strokeLinecap="round" strokeLinejoin="round" strokeWidth="7" />
+        {compact && segmentStatuses
+          ? points.slice(1).map((point, index) => {
+              const prevPoint = points[index];
+              const passed = segmentStatuses[index] ?? false;
+              return (
+                <Path
+                  key={`segment-${index}`}
+                  d={`M ${prevPoint.x} ${prevPoint.y} L ${point.x} ${point.y}`}
+                  fill="none"
+                  stroke={passed ? colors.primaryMid : '#DC2626'}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="7"
+                />
+              );
+            })
+          : <Path d={line} fill="none" stroke={colors.primaryMid} strokeLinecap="round" strokeLinejoin="round" strokeWidth="7" />}
         {!compact
           ? points.map((point, index) => (
               <Circle key={`dot-${index}`} cx={point.x} cy={point.y} fill={colors.primary} r={4.5} stroke={colors.surface} strokeWidth="2" />
             ))
           : null}
       </Svg>
-      {!compact && targetLabel ? <Text style={styles.chartTarget}>{targetLabel}</Text> : null}
+      {targetLabel ? <Text style={[styles.chartTarget, compact && styles.chartTargetCompact]}>{targetLabel}</Text> : null}
     </View>
   );
 }
@@ -180,11 +257,21 @@ function WeeklyCaloriesCard({ analytics }: { analytics: ReturnType<typeof buildA
       <View style={styles.cardHeader}>
         <Text style={styles.cardTitle}>Weekly Calorie Average</Text>
         <View style={styles.weeklyValueWrap}>
-          <Text style={styles.weeklyValue}>{analytics.averageCalories.toLocaleString()}</Text>
+          <Text style={[styles.weeklyValue, analytics.isAverageCaloriesOnTarget ? styles.weeklyValueSuccess : styles.weeklyValueDanger]}>
+            {analytics.averageCalories.toLocaleString()}
+          </Text>
           <Text style={styles.weeklySuffix}>AVG KCAL/DAY</Text>
         </View>
       </View>
-      <LineChart compact values={analytics.calorieValues} />
+      <LineChart
+        centerValue={analytics.calorieGoal}
+        compact
+        segmentStatuses={analytics.calorieStatuses}
+        totalSlots={7}
+        targetLabel={`TARGET ${analytics.calorieGoal.toLocaleString()} KCAL`}
+        targetValue={analytics.calorieGoal}
+        values={analytics.calorieValues}
+      />
       <View style={styles.chartDays}>
         {compactDayLabels.map((day, index) => (
           <Text key={`${day}-${index}`} style={styles.chartDay}>
@@ -196,7 +283,13 @@ function WeeklyCaloriesCard({ analytics }: { analytics: ReturnType<typeof buildA
   );
 }
 
-function WaterCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics> }) {
+function WaterCard({
+  analytics,
+  onUpdateWaterTarget,
+}: {
+  analytics: ReturnType<typeof buildAnalytics>;
+  onUpdateWaterTarget: (nextTargetLiters: number) => void;
+}) {
   return (
     <View style={styles.card}>
       <View style={styles.cardHeader}>
@@ -213,8 +306,19 @@ function WaterCard({ analytics }: { analytics: ReturnType<typeof buildAnalytics>
         </View>
         <HealthRing percent={analytics.averageWaterPercent} />
       </View>
+      <View style={styles.targetControls}>
+        <Pressable onPress={() => onUpdateWaterTarget(Math.max(0.5, analytics.waterTargetLiters - 0.5))} style={styles.targetAdjustButton}>
+          <Text style={styles.targetAdjustText}>-</Text>
+        </Pressable>
+        <Pressable onPress={() => onUpdateWaterTarget(Math.min(10, analytics.waterTargetLiters + 0.5))} style={styles.targetAdjustButton}>
+          <Text style={styles.targetAdjustText}>+</Text>
+        </Pressable>
+        <View style={styles.targetButton}>
+          <Text style={styles.targetButtonText}>Target {analytics.waterTargetLiters.toFixed(1)} L</Text>
+        </View>
+      </View>
       <Text style={styles.bodyFatNote}>
-        Average hydration from Monday to Sunday. Daily target: {(waterGoalMl / 1000).toFixed(1)}L.
+        Average hydration from Monday to today. Daily target: {analytics.waterTargetLiters.toFixed(1)}L.
       </Text>
     </View>
   );
@@ -291,26 +395,37 @@ function buildAnalytics({
   goal,
   profileWeight,
   proteinGoal,
+  waterTargetLiters,
   weeklyLogs,
-}: ProgressScreenProps) {
+}: AnalyticsInput) {
   const safeCalorieGoal = Math.max(calorieGoal, 1);
   const weekDays = buildWeekDays(weeklyLogs);
+  const todayKey = formatDate(new Date());
+  const todayIndex = weekDays.findIndex((item) => item.date === todayKey);
+  const visibleWeekDays = weekDays.slice(0, todayIndex >= 0 ? todayIndex + 1 : weekDays.length);
   const calorieValues = weekDays.map((item) => item.log?.calories ?? 0);
-  const weightValues = buildWeightValues(weekDays, profileWeight);
-  const waterValues = weekDays.map((item) => item.log?.waterMl ?? 0);
-  const totalCalories = calorieValues.reduce((sum, value) => sum + value, 0);
+  const visibleCalorieValues = visibleWeekDays.map((item) => item.log?.calories ?? 0);
+  const calorieStatuses = visibleCalorieValues.map((value) => isGoalCompleted(value, goal, safeCalorieGoal));
+  const weightValues = buildWeightValues(visibleWeekDays, profileWeight);
+  const waterValues = visibleWeekDays.map((item) => item.log?.waterMl ?? 0);
+  const totalCalories = visibleCalorieValues.reduce((sum, value) => sum + value, 0);
   const totalWater = waterValues.reduce((sum, value) => sum + value, 0);
+  const waterTargetMl = Math.max(500, Math.round(waterTargetLiters * 1000));
   const currentWeight = weightValues[weightValues.length - 1] ?? profileWeight;
   const firstWeight = weightValues[0] ?? currentWeight;
 
+  const averageCalories = Math.round(totalCalories / Math.max(visibleWeekDays.length, 1));
+
   return {
     activityStreak: getCurrentStreak(weekDays, goal, safeCalorieGoal),
-    averageCalories: Math.round(totalCalories / 7),
-    averageWaterLiters: totalWater / 7 / 1000,
-    averageWaterPercent: Math.round((totalWater / (waterGoalMl * 7)) * 100),
+    averageCalories,
+    averageWaterLiters: totalWater / Math.max(visibleWeekDays.length, 1) / 1000,
+    averageWaterPercent: Math.round((totalWater / (waterTargetMl * Math.max(visibleWeekDays.length, 1))) * 100),
+    calorieStatuses,
     calorieGoal: safeCalorieGoal,
-    calorieValues,
+    calorieValues: visibleCalorieValues,
     currentWeight,
+    goalLabel: formatGoalLabel(goal),
     nutrients: [
       {
         color: '#16A34A',
@@ -328,14 +443,28 @@ function buildAnalytics({
         percent: getNutrientPercent(weekDays, 'fats', fatsGoal),
       },
     ] satisfies NutrientItem[],
+    isAverageCaloriesOnTarget: isGoalCompleted(averageCalories, goal, safeCalorieGoal),
     targetWeight: profileWeight,
+    waterTargetLiters,
+    weightDayLabels: dayLabels.slice(0, visibleWeekDays.length),
     weekDays: weekDays.map((item) => ({
       ...item,
       status: getWeekDayStatus(item, goal, safeCalorieGoal),
     })),
-    weightDelta: currentWeight - firstWeight,
     weightValues,
   };
+}
+
+function formatGoalLabel(goal: ProgressScreenProps['goal']) {
+  if (goal === 'gain_muscle') {
+    return 'Gain Muscle';
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    return 'Healthy Lifestyle';
+  }
+
+  return 'Lose Weight';
 }
 
 function buildWeekDays(weeklyLogs: DailyLog[]): WeekDayMetric[] {
@@ -565,6 +694,26 @@ const styles = StyleSheet.create({
     ...font.manropeBold,
     fontSize: 18,
   },
+  currentPlanBadge: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#ECFDF3',
+    borderColor: '#86E0B8',
+    borderRadius: 10,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    marginTop: 28,
+    marginBottom: spacing.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  currentPlanText: {
+    color: '#0F7A52',
+    ...font.semiBold,
+    fontSize: 14,
+    textTransform: 'uppercase',
+  },
   chartDay: {
     color: colors.inkMuted,
     ...font.bold,
@@ -584,6 +733,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     position: 'absolute',
     right: 4,
+  },
+  chartTargetCompact: {
+    bottom: 28,
+    fontSize: 9,
+    right: 8,
   },
   chartWrap: {
     alignSelf: 'center',
@@ -680,6 +834,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
+  deltaArrowUp: {
+    transform: [{ rotate: '180deg' }],
+  },
+  targetAdjustButton: {
+    alignItems: 'center',
+    margin: 2,
+    backgroundColor: colors.accentSoft,
+    borderRadius: 10,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  targetAdjustText: {
+    color: colors.ink,
+    ...font.bold,
+    fontSize: 18,
+    lineHeight: 22,
+  },
+  targetButton: {
+    backgroundColor: '#E8F3ED',
+    borderColor: '#BDE4CF',
+    borderRadius: 10,
+    borderWidth: 1,
+    marginLeft: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  targetButtonText: {
+    color: colors.primary,
+    ...font.semiBold,
+    fontSize: 12,
+  },
+  targetControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: spacing.md,
+  },
   weightDeltaText: {
     color: '#306D58',
     ...font.semiBold,
@@ -708,10 +899,15 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   weeklyValue: {
-    color: colors.accent,
     ...font.bold,
     fontSize: 20,
     textAlign: 'right',
+  },
+  weeklyValueDanger: {
+    color: '#DC2626',
+  },
+  weeklyValueSuccess: {
+    color: colors.primaryMid,
   },
   weeklyValueWrap: {
     alignItems: 'flex-end',

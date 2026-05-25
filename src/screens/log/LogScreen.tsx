@@ -11,7 +11,6 @@ const logBreakfastImage = require('../../../assets/log-breakfast-new.png');
 const logLunchImage = require('../../../assets/log-lunch-new.png');
 const logDinnerImage = require('../../../assets/log-dinner-new.png');
 const dateCardStep = 84;
-const hydrationGoalLiters = 2.5;
 const hydrationCupLiters = 0.5;
 
 const nutritionColors = {
@@ -40,6 +39,7 @@ type LogScreenProps = {
   onOpenRecipe: (recipe: NonNullable<MealPlan['recipe']>) => void;
   onSelectDate: (date: string) => void | Promise<void>;
   selectedDate: string;
+  waterTargetLiters: number;
 };
 
 export function LogScreen({
@@ -51,6 +51,7 @@ export function LogScreen({
   onOpenRecipe,
   onSelectDate,
   selectedDate,
+  waterTargetLiters,
 }: LogScreenProps) {
   const dateScrollRef = useRef<ScrollView>(null);
   const dateCards = useMemo(() => buildDateCards(selectedDate), [selectedDate]);
@@ -142,7 +143,7 @@ export function LogScreen({
         );
       })}
 
-      <HydrationLogCard waterMl={dailyLog?.waterMl ?? 0} />
+      <HydrationLogCard waterMl={dailyLog?.waterMl ?? 0} waterTargetLiters={waterTargetLiters} />
     </View>
   );
 }
@@ -208,9 +209,10 @@ function DinnerMacro({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HydrationLogCard({ waterMl }: { waterMl: number }) {
-  const consumedLiters = Math.min(waterMl / 1000, hydrationGoalLiters);
+function HydrationLogCard({ waterMl, waterTargetLiters }: { waterMl: number; waterTargetLiters: number }) {
+  const consumedLiters = Math.min(waterMl / 1000, waterTargetLiters);
   const activeDots = Math.round(consumedLiters / hydrationCupLiters);
+  const cups = Array.from({ length: Math.max(1, Math.round(waterTargetLiters / hydrationCupLiters)) }, (_, index) => index + 1);
 
   return (
     <View style={styles.hydrationCard}>
@@ -221,10 +223,10 @@ function HydrationLogCard({ waterMl }: { waterMl: number }) {
         <Text style={styles.hydrationTitle}>Hydration</Text>
       </View>
       <Text style={styles.hydrationValue}>
-        {consumedLiters.toFixed(1)} <Text style={styles.hydrationGoal}>/ {hydrationGoalLiters.toFixed(1)}L</Text>
+        {consumedLiters.toFixed(1)} <Text style={styles.hydrationGoal}>/ {waterTargetLiters.toFixed(1)}L</Text>
       </Text>
       <View style={styles.hydrationDots}>
-        {[1, 2, 3, 4, 5].map((item) => (
+        {cups.map((item) => (
           <View key={item} style={[styles.hydrationDot, item <= activeDots && styles.hydrationDotActive]} />
         ))}
       </View>

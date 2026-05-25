@@ -97,6 +97,7 @@ export default function App() {
   const [selectedLogDate, setSelectedLogDate] = useState(() => formatDate(new Date()));
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [toastMessage, setToastMessage] = useState('');
+  const [waterTargetLiters, setWaterTargetLiters] = useState(2.5);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profile, setProfile] = useState<UserProfile>({
     goal: 'lose_weight',
@@ -376,7 +377,7 @@ export default function App() {
   };
   const addWater = async () => {
     const logDate = formatDate(new Date());
-    const nextWaterMl = Math.min((todayLog?.waterMl ?? 0) + 500, 2500);
+    const nextWaterMl = Math.min((todayLog?.waterMl ?? 0) + 500, Math.round(waterTargetLiters * 1000));
     const updatedLog = await api.upsertDailyLog({
       logDate,
       calories: todayLog?.calories ?? 0,
@@ -576,12 +577,14 @@ export default function App() {
         metrics={homeMetrics}
         onAddRecipeToLog={addRecipeToLog}
         onAddWater={addWater}
+        onUpdateWaterTarget={setWaterTargetLiters}
         onDeleteRecipe={deleteUserRecipe}
         onUpdateRecipe={updateUserRecipe}
         profileWeight={profile.weight}
         recipes={recipes}
         weeklyMealPlans={weeklyMealPlans}
         weeklyLogs={weeklyLogs}
+        waterTargetLiters={waterTargetLiters}
         selectedLogDate={selectedLogDate}
         onSelectLogDate={selectLogDate}
         onTabChange={setActiveTab}
