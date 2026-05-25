@@ -63,6 +63,7 @@ const font = {
 type HomeScreenProps = {
   activeTab: AppTab;
   dailyLog: DailyLog | null;
+  goal: 'lose_weight' | 'gain_muscle' | 'healthy_lifestyle' | string;
   mealPlans: MealPlan[];
   metrics: HomeMetrics;
   onAddRecipeToLog: (recipe: Recipe, mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => Promise<void>;
@@ -119,6 +120,7 @@ function getCalorieRingMetrics(summary: CalorieSummary) {
 export function HomeScreen({
   activeTab,
   dailyLog,
+  goal,
   mealPlans,
   metrics,
   onAddRecipeToLog,
@@ -214,11 +216,12 @@ export function HomeScreen({
           ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
         >
-          {activeTab === 'Home' ? <HomeContent metrics={metrics} onAddWater={onAddWater} /> : null}
+          {activeTab === 'Home' ? <HomeContent goal={goal} metrics={metrics} onAddWater={onAddWater} /> : null}
           {activeTab === 'Log' && logRoute === 'log' ? (
             <LogScreen
               calorieGoal={metrics.calorieGoal}
               dailyLog={dailyLog}
+              goal={goal}
               mealPlans={mealPlans}
               onAddSnack={() => setLogRoute('addSnack')}
               onOpenRecipe={(recipe) => {
@@ -284,6 +287,7 @@ export function HomeScreen({
               calorieGoal={metrics.calorieGoal}
               carbsGoal={metrics.carbsGoal}
               fatsGoal={metrics.fatsGoal}
+              goal={goal}
               profileWeight={profileWeight}
               proteinGoal={metrics.proteinGoal}
               weeklyLogs={weeklyLogs}
@@ -336,8 +340,20 @@ function Header({
   );
 }
 
-function HomeContent({ metrics, onAddWater }: { metrics: HomeMetrics; onAddWater: () => void | Promise<void> }) {
+function HomeContent({
+  goal,
+  metrics,
+  onAddWater,
+}: {
+  goal: HomeScreenProps['goal'];
+  metrics: HomeMetrics;
+  onAddWater: () => void | Promise<void>;
+}) {
   const calorieGoal = Math.max(metrics.calorieGoal, 1);
+  const goalRangeMin = Math.round(calorieGoal * 0.8);
+  const goalRangeMax = Math.round(calorieGoal * 1.2);
+  const goalInstruction = getGoalInstruction(goal, calorieGoal, goalRangeMin, goalRangeMax);
+  const goalStatus = getGoalStatusInfo(goal, metrics.calories, calorieGoal, goalRangeMin, goalRangeMax);
   const macroItems = [
     { label: 'CALORIES', value: metrics.calories, target: calorieGoal, color: '#006C49', suffix: '' },
     { label: 'PROTEIN', value: metrics.proteins, target: metrics.proteinGoal, color: '#3B82F6', suffix: 'g' },
@@ -352,9 +368,20 @@ function HomeContent({ metrics, onAddWater }: { metrics: HomeMetrics; onAddWater
           Fuel your <Text style={styles.heroAccent}>Potential.</Text>
         </Text>
         <Text style={styles.heroCopy}>
-          You've consumed {metrics.calories.toLocaleString()} kcal today.{'\n'}Stay on track for your{' '}
-          {calorieGoal.toLocaleString()} kcal daily{'\n'}goal.
+          You've consumed {metrics.calories.toLocaleString()} kcal today.{'\n'}
+          {goalInstruction}
         </Text>
+      </View>
+      <View
+        style={[
+          styles.goalStatusCard,
+          { backgroundColor: goalStatus.backgroundColor, borderColor: goalStatus.borderColor },
+        ]}
+      >
+        <View style={[styles.goalStatusIconWrap, { backgroundColor: goalStatus.iconBackgroundColor }]}>
+          <Text style={[styles.goalStatusIcon, { color: goalStatus.color }]}>{goalStatus.icon}</Text>
+        </View>
+        <Text style={[styles.goalStatusText, { color: goalStatus.color }]}>{goalStatus.message}</Text>
       </View>
 
       <View style={styles.macroRow}>
@@ -384,22 +411,121 @@ function HomeContent({ metrics, onAddWater }: { metrics: HomeMetrics; onAddWater
         ))}
       </View>
 
-      <CalorieRing summary={{ consumed: metrics.calories, goal: calorieGoal }} />
+      <CalorieRing goal={goal} summary={{ consumed: metrics.calories, goal: calorieGoal }} />
       <WaterTrackerCard onAddWater={onAddWater} waterMl={metrics.waterMl} />
       <MealCard />
       <InsightCard />
-      <WeeklyOverview calorieGoal={calorieGoal} weeklyCalories={metrics.weeklyCalories} />
+      <WeeklyOverview calorieGoal={calorieGoal} goal={goal} weeklyCalories={metrics.weeklyCalories} />
     </>
   );
 }
 
-function CalorieRing({ summary }: { summary: CalorieSummary }) {
+function getGoalInstruction(goal: HomeScreenProps['goal'], calorieGoal: number, goalRangeMin: number, goalRangeMax: number) {
+  if (goal === 'gain_muscle') {
+    return `To complete Gain Muscle, keep calories >= ${calorieGoal.toLocaleString()} kcal/day.`;
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    return `To complete Healthy Lifestyle, keep calories around ±20% of target (${goalRangeMin.toLocaleString()} - ${goalRangeMax.toLocaleString()} kcal/day).`;
+  }
+
+  return `To complete Lose Weight, keep calories <= ${calorieGoal.toLocaleString()} kcal/day.`;
+}
+
+function getGoalStatusInfo(
+  goal: HomeScreenProps['goal'],
+  calories: number,
+  calorieGoal: number,
+  goalRangeMin: number,
+  goalRangeMax: number,
+) {
+  if (goal === 'gain_muscle') {
+    if (calories >= calorieGoal) {
+      return {
+        backgroundColor: '#ECFDF3',
+        borderColor: '#86EFAC',
+        color: '#166534',
+        iconBackgroundColor: '#D1FAE5',
+        icon: '✓',
+        message: 'You have completed your Gain Muscle goal for today.',
+      };
+    }
+
+    return {
+      backgroundColor: '#FFF7ED',
+      borderColor: '#FDBA74',
+      color: '#C2410C',
+      iconBackgroundColor: '#FFEDD5',
+      icon: '!',
+      message: 'Keep going, you are on the Gain Muscle journey. Add more calories to reach your goal faster.',
+    };
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    if (calories < goalRangeMin) {
+      return {
+        backgroundColor: '#FFF7ED',
+        borderColor: '#FDBA74',
+        color: '#C2410C',
+        iconBackgroundColor: '#FFEDD5',
+        icon: '!',
+        message: 'Keep going, you are on the Healthy Lifestyle journey. Add more calories to reach your goal faster.',
+      };
+    }
+
+    if (calories > goalRangeMax) {
+      return {
+        backgroundColor: '#FEF2F2',
+        borderColor: '#FCA5A5',
+        color: '#B91C1C',
+        iconBackgroundColor: '#FEE2E2',
+        icon: '✕',
+        message: 'You did not complete your Healthy Lifestyle goal for today.',
+      };
+    }
+
+    return {
+      backgroundColor: '#ECFDF3',
+      borderColor: '#86EFAC',
+      color: '#166534',
+      iconBackgroundColor: '#D1FAE5',
+      icon: '✓',
+      message: 'You have completed your Healthy Lifestyle goal for today.',
+    };
+  }
+
+  if (calories <= calorieGoal) {
+    return {
+      backgroundColor: '#ECFDF3',
+      borderColor: '#86EFAC',
+      color: '#166534',
+      iconBackgroundColor: '#D1FAE5',
+      icon: '✓',
+      message: 'You are maintaining your Lose Weight journey very well. Keep eating wisely to maintain your weight.',
+    };
+  }
+
+  return {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    color: '#B91C1C',
+    iconBackgroundColor: '#FEE2E2',
+    icon: '✕',
+    message: 'You did not complete your Lose Weight goal for today.',
+  };
+}
+
+function CalorieRing({ goal, summary }: { goal: HomeScreenProps['goal']; summary: CalorieSummary }) {
   const size = 270;
   const strokeWidth = 24;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const { consumed, consumedPercent, ringProgress } = getCalorieRingMetrics(summary);
   const strokeDashoffset = circumference * (1 - ringProgress);
+  const isOverLimit =
+    (goal === 'lose_weight' && consumed > summary.goal) ||
+    (goal === 'healthy_lifestyle' && consumed > summary.goal * 1.2);
+  const activeColor = isOverLimit ? '#DC2626' : colors.primaryMid;
 
   return (
     <View style={styles.ringWrap}>
@@ -420,7 +546,7 @@ function CalorieRing({ summary }: { summary: CalorieSummary }) {
           originY={size / 2}
           r={radius}
           rotation="-90"
-          stroke={colors.primaryMid}
+          stroke={activeColor}
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
@@ -430,7 +556,7 @@ function CalorieRing({ summary }: { summary: CalorieSummary }) {
       <View style={styles.ringCenter}>
         <Text style={styles.ringNumber}>{consumed.toLocaleString()}</Text>
         <Text style={styles.ringLabel}>KCAL EATEN</Text>
-        <Text style={styles.ringPercent}>{consumedPercent}% consumed</Text>
+        <Text style={[styles.ringPercent, isOverLimit && styles.ringPercentOver]}>{consumedPercent}% consumed</Text>
       </View>
     </View>
   );
@@ -532,9 +658,11 @@ function InsightCard() {
 
 function WeeklyOverview({
   calorieGoal,
+  goal,
   weeklyCalories,
 }: {
   calorieGoal: number;
+  goal: HomeScreenProps['goal'];
   weeklyCalories: HomeMetrics['weeklyCalories'];
 }) {
   const maxWeeklyCalories = Math.max(calorieGoal, 1);
@@ -549,16 +677,20 @@ function WeeklyOverview({
       <View style={styles.weeklyChart}>
         {weeklyCalories.map((item) => {
           const barHeight = item.calories === 0 ? 0 : Math.max(8, (item.calories / maxWeeklyCalories) * chartHeight);
+          const isOverLimit =
+            item.isToday &&
+            ((goal === 'lose_weight' && item.calories > calorieGoal) ||
+              (goal === 'healthy_lifestyle' && item.calories > calorieGoal * 1.2));
 
           return (
             <View key={item.day} style={styles.weekColumn}>
               <Text style={[styles.weekValue, item.isToday && styles.weekValueActive]}>{item.calories}</Text>
               <View style={styles.weekBarTrack}>
                 {barHeight > 0 ? (
-                  <View style={[styles.weekBar, item.isToday && styles.weekBarActive, { height: barHeight }]} />
+                  <View style={[styles.weekBar, item.isToday && styles.weekBarActive, isOverLimit && styles.weekBarOver, { height: barHeight }]} />
                 ) : null}
               </View>
-              <Text style={[styles.weekDay, item.isToday && styles.weekDayActive]}>{item.day}</Text>
+              <Text style={[styles.weekDay, item.isToday && styles.weekDayActive, isOverLimit && styles.weekDayOver]}>{item.day}</Text>
             </View>
           );
         })}
@@ -1024,6 +1156,35 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
+  goalStatusCard: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  goalStatusIconWrap: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  goalStatusIcon: {
+    ...font.bold,
+    fontSize: 14,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  goalStatusText: {
+    ...font.medium,
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
   heroTitle: {
     color: colors.ink,
     ...font.manropeExtraBold,
@@ -1336,6 +1497,9 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: spacing.sm,
   },
+  ringPercentOver: {
+    color: '#DC2626',
+  },
   ringSvg: {
     position: 'absolute',
   },
@@ -1600,6 +1764,9 @@ const styles = StyleSheet.create({
   weekDayActive: {
     color: colors.primary,
   },
+  weekDayOver: {
+    color: '#DC2626',
+  },
   weekBar: {
     backgroundColor: '#C8D1E5',
     borderRadius: 999,
@@ -1610,6 +1777,9 @@ const styles = StyleSheet.create({
   weekBarActive: {
     backgroundColor: colors.primaryMid,
     width: 22,
+  },
+  weekBarOver: {
+    backgroundColor: '#DC2626',
   },
   weekBarTrack: {
     alignItems: 'center',

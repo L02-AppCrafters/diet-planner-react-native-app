@@ -34,6 +34,7 @@ const font = {
 type LogScreenProps = {
   calorieGoal: number;
   dailyLog: DailyLog | null;
+  goal: 'lose_weight' | 'gain_muscle' | 'healthy_lifestyle' | string;
   mealPlans: MealPlan[];
   onAddSnack: () => void;
   onOpenRecipe: (recipe: NonNullable<MealPlan['recipe']>) => void;
@@ -44,6 +45,7 @@ type LogScreenProps = {
 export function LogScreen({
   calorieGoal,
   dailyLog,
+  goal,
   mealPlans,
   onAddSnack,
   onOpenRecipe,
@@ -57,6 +59,10 @@ export function LogScreen({
   const calories = dailyLog?.calories ?? 0;
   const plannedPercent = Math.round((Math.max(calories, 0) / normalizedCalorieGoal) * 100);
   const plannedFillPercent = Math.min(plannedPercent, 100);
+  const isOverLimit =
+    (goal === 'lose_weight' && calories > normalizedCalorieGoal) ||
+    (goal === 'healthy_lifestyle' && calories > normalizedCalorieGoal * 1.2);
+  const energyActiveColor = isOverLimit ? '#DC2626' : colors.primaryMid;
 
   useEffect(() => {
     const activeIndex = dateCards.findIndex((item) => item.active);
@@ -72,15 +78,15 @@ export function LogScreen({
       <View style={styles.energyCard}>
         <Text style={styles.energyLabel}>Energy Budget</Text>
         <View style={styles.energyRow}>
-          <Text style={styles.energyValue}>{calories.toLocaleString()}</Text>
+          <Text style={[styles.energyValue, isOverLimit && styles.energyValueOver]}>{calories.toLocaleString()}</Text>
           <Text style={styles.energyGoal}>/ {normalizedCalorieGoal.toLocaleString()}</Text>
         </View>
         <View style={styles.energyMetaRow}>
           <Text style={styles.energyUnit}>kcal</Text>
-          <Text style={styles.plannedBadge}>{plannedPercent}% Planned</Text>
+          <Text style={[styles.plannedBadge, isOverLimit && styles.plannedBadgeOver]}>{plannedPercent}% Planned</Text>
         </View>
         <View style={styles.energyTrack}>
-          <View style={[styles.energyFill, { width: `${plannedFillPercent}%` }]} />
+          <View style={[styles.energyFill, { backgroundColor: energyActiveColor, width: `${plannedFillPercent}%` }]} />
         </View>
       </View>
 
@@ -576,6 +582,9 @@ const styles = StyleSheet.create({
     fontSize: 36,
     lineHeight: 42,
   },
+  energyValueOver: {
+    color: '#DC2626',
+  },
   hydrationCard: {
     backgroundColor: '#EAF1FF',
     borderColor: '#D8E5FF',
@@ -664,6 +673,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
+  },
+  plannedBadgeOver: {
+    backgroundColor: '#FEE2E2',
+    color: '#B91C1C',
   },
   timeBadge: {
     backgroundColor: colors.accentSoft,

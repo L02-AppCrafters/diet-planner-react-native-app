@@ -25,6 +25,7 @@ type ProgressScreenProps = {
   calorieGoal: number;
   carbsGoal: number;
   fatsGoal: number;
+  goal: 'lose_weight' | 'gain_muscle' | 'healthy_lifestyle' | string;
   profileWeight: number;
   proteinGoal: number;
   weeklyLogs: DailyLog[];
@@ -45,6 +46,7 @@ export function ProgressScreen({
   calorieGoal,
   carbsGoal,
   fatsGoal,
+  goal,
   profileWeight,
   proteinGoal,
   weeklyLogs,
@@ -53,6 +55,7 @@ export function ProgressScreen({
     calorieGoal,
     carbsGoal,
     fatsGoal,
+    goal,
     profileWeight,
     proteinGoal,
     weeklyLogs,
@@ -150,10 +153,15 @@ function ActivityCard({ analytics }: { analytics: ReturnType<typeof buildAnalyti
         <Text style={styles.activityUnit}>Days</Text>
       </View>
       <View style={styles.activityBars}>
-        {analytics.weekDays.map((item, index) => (
+        {analytics.weekDays.map((item) => (
           <View
             key={item.date}
-            style={[styles.activityBar, (item.log?.calories ?? 0) < analytics.calorieGoal && styles.activityBarMuted]}
+            style={[
+              styles.activityBar,
+              item.status === 'completed' && styles.activityBarCompleted,
+              item.status === 'missed' && styles.activityBarMissed,
+              item.status === 'pending' && styles.activityBarMuted,
+            ]}
           />
         ))}
       </View>
@@ -280,6 +288,7 @@ function buildAnalytics({
   calorieGoal,
   carbsGoal,
   fatsGoal,
+  goal,
   profileWeight,
   proteinGoal,
   weeklyLogs,
@@ -295,7 +304,7 @@ function buildAnalytics({
   const firstWeight = weightValues[0] ?? currentWeight;
 
   return {
-    activityStreak: getCurrentStreak(weekDays, safeCalorieGoal),
+    activityStreak: getCurrentStreak(weekDays, goal, safeCalorieGoal),
     averageCalories: Math.round(totalCalories / 7),
     averageWaterLiters: totalWater / 7 / 1000,
     averageWaterPercent: Math.round((totalWater / (waterGoalMl * 7)) * 100),
@@ -320,7 +329,10 @@ function buildAnalytics({
       },
     ] satisfies NutrientItem[],
     targetWeight: profileWeight,
-    weekDays,
+    weekDays: weekDays.map((item) => ({
+      ...item,
+      status: getWeekDayStatus(item, goal, safeCalorieGoal),
+    })),
     weightDelta: currentWeight - firstWeight,
     weightValues,
   };
@@ -354,7 +366,7 @@ function buildWeightValues(weekDays: WeekDayMetric[], profileWeight: number) {
   });
 }
 
-function getCurrentStreak(weekDays: WeekDayMetric[], calorieGoal: number) {
+function getCurrentStreak(weekDays: WeekDayMetric[], goal: ProgressScreenProps['goal'], calorieGoal: number) {
   const todayKey = formatDate(new Date());
   const todayIndex = Math.max(
     0,
@@ -363,7 +375,7 @@ function getCurrentStreak(weekDays: WeekDayMetric[], calorieGoal: number) {
   let streak = 0;
 
   for (let index = todayIndex; index >= 0; index -= 1) {
-    if ((weekDays[index].log?.calories ?? 0) < calorieGoal) {
+    if (!isGoalCompleted(weekDays[index].log?.calories ?? null, goal, calorieGoal)) {
       break;
     }
 
@@ -371,6 +383,40 @@ function getCurrentStreak(weekDays: WeekDayMetric[], calorieGoal: number) {
   }
 
   return streak;
+}
+
+function getWeekDayStatus(
+  day: WeekDayMetric,
+  goal: ProgressScreenProps['goal'],
+  calorieGoal: number,
+): 'completed' | 'missed' | 'pending' {
+  const todayKey = formatDate(new Date());
+
+  if (day.date > todayKey || !day.log) {
+    return 'pending';
+  }
+
+  return isGoalCompleted(day.log.calories, goal, calorieGoal) ? 'completed' : 'missed';
+}
+
+function isGoalCompleted(
+  calories: number | null,
+  goal: ProgressScreenProps['goal'],
+  calorieGoal: number,
+) {
+  if (calories === null) {
+    return false;
+  }
+
+  if (goal === 'gain_muscle') {
+    return calories >= calorieGoal;
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    return calories >= calorieGoal * 0.8 && calories <= calorieGoal * 1.2;
+  }
+
+  return calories <= calorieGoal;
 }
 
 function getNutrientPercent(weekDays: WeekDayMetric[], key: 'proteins' | 'carbs' | 'fats', dailyGoal: number) {
@@ -405,10 +451,16 @@ const styles = StyleSheet.create({
     right: 20,
   },
   activityBar: {
-    backgroundColor: colors.primary,
+    backgroundColor: '#CBD9F3',
     borderRadius: 999,
     flex: 1,
     height: 6,
+  },
+  activityBarCompleted: {
+    backgroundColor: '#16A34A',
+  },
+  activityBarMissed: {
+    backgroundColor: '#DC2626',
   },
   activityBarMuted: {
     backgroundColor: '#CBD9F3',

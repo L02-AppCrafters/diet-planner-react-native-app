@@ -477,10 +477,16 @@ export default function App() {
 
   // 2. Luồng Body Profile Onboarding
   if (currentFlow === 'OnboardingProfile') {
+    const todayDate = formatDate(new Date());
+    const isLoggedIn = Boolean(accessTokenRef.current);
+    const hasLoggedRecipeToday = weeklyMealPlans.some((mealPlan) => mealPlan.date === todayDate);
+
     return (
       <BodyProfileScreen
+        canEditBodyMetrics={!(isLoggedIn && hasLoggedRecipeToday)}
         key={`${profile.height}-${profile.weight}-${profile.age}-${profile.activityLevel}`}
         initialProfile={profile}
+        onBack={() => setCurrentFlow(isLoggedIn ? 'MainApp' : 'OnboardingGoal')}
         onLogout={accessTokenRef.current ? handleLogout : undefined}
         onUpdateProfile={async (updatedProfile) => {
           const initialHistory = buildInitialWeightHistory(updatedProfile.weight);
@@ -565,6 +571,7 @@ export default function App() {
       <HomeScreen
         activeTab={activeTab}
         dailyLog={selectedDailyLog}
+        goal={profile.goal}
         mealPlans={mealPlans}
         metrics={homeMetrics}
         onAddRecipeToLog={addRecipeToLog}
