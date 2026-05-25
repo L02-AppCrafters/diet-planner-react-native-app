@@ -71,6 +71,20 @@ function parseStoredNumber(value: string | null, fallback: number) {
   return Number.isFinite(parsed) ? parsed : fallback;
 }
 
+function toAbsoluteImageUrl(imageUrl: string) {
+  if (!imageUrl) {
+    return '';
+  }
+
+  if (/^https?:\/\//i.test(imageUrl)) {
+    return imageUrl.replace('http://localhost:4000', 'http://10.0.2.2:4000');
+  }
+
+  const apiBase = (process.env.EXPO_PUBLIC_API_URL ?? 'http://10.0.2.2:4000/api').replace(/\/$/, '');
+  const hostBase = apiBase.replace(/\/api$/, '');
+  return `${hostBase}${imageUrl.startsWith('/') ? imageUrl : `/${imageUrl}`}`;
+}
+
 function mapUserToProfile(user: Awaited<ReturnType<ApiClient['me']>>, fallback: UserProfile): UserProfile {
   return {
     ...fallback,
@@ -465,14 +479,14 @@ export default function App() {
     showSuccessToast('Recipe deleted');
   };
   const recognizeFoodFromImage = async (imageBase64: string) => {
-    const { recognized } = await api.recognizeFood({ imageBase64 });
+    const { imageUrl, recognized } = await api.recognizeFood({ imageBase64 });
     const now = new Date().toISOString();
 
     return {
       id: `draft-${now}`,
       uid: null,
       recipeName: recognized.recipeName,
-      imageUrl: imageBase64,
+      imageUrl: toAbsoluteImageUrl(imageUrl),
       isDefault: false,
       createdAt: now,
       updatedAt: now,

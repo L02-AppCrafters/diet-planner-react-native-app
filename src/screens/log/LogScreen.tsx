@@ -64,6 +64,7 @@ export function LogScreen({
     (goal === 'lose_weight' && calories > normalizedCalorieGoal) ||
     (goal === 'healthy_lifestyle' && calories > normalizedCalorieGoal * 1.2);
   const energyActiveColor = isOverLimit ? '#DC2626' : colors.primaryMid;
+  const optimizationText = getOptimizationSuggestion(goal);
 
   useEffect(() => {
     const activeIndex = dateCards.findIndex((item) => item.active);
@@ -92,10 +93,10 @@ export function LogScreen({
       </View>
 
       <View style={styles.optimizationCard}>
-        <Text style={styles.optimizationTitle}>AI Optimization</Text>
-        <Text style={styles.optimizationCopy}>
-          Your plan is low in Fiber today. We suggest adding Chia Seeds to your afternoon snack.
-        </Text>
+        <View style={styles.optimizationContent}>
+          <Text style={styles.optimizationTitle}>Optimization</Text>
+          <Text style={styles.optimizationCopy}>{optimizationText}</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -390,6 +391,18 @@ function titleCase(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 }
 
+function getOptimizationSuggestion(goal: LogScreenProps['goal']) {
+  if (goal === 'gain_muscle') {
+    return 'Build your meal plan around a steady calorie surplus with enough protein in each meal. Keep carbohydrates distributed across the day to support training performance and recovery, and add healthy fats for sustained energy.';
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    return 'Choose balanced meals with quality protein, fiber-rich carbohydrates, vegetables, and healthy fats. Keep portions consistent, maintain hydration, and focus on habits you can sustain for the long term.';
+  }
+
+  return 'For fat loss, organize meals around lean protein, high-fiber vegetables, and controlled carbohydrate portions. Limit calorie-dense fried foods and sugary drinks, and prioritize nutrient-dense choices that keep you full.';
+}
+
 const styles = StyleSheet.create({
   addSnackCard: {
     alignItems: 'center',
@@ -646,26 +659,33 @@ const styles = StyleSheet.create({
     width: 28,
   },
   optimizationCard: {
+    alignSelf: 'stretch',
     backgroundColor: colors.primaryDark,
-    borderRadius: 20,
+    borderRadius: 12,
     marginTop: 24,
-    minHeight: 140,
+    minHeight: 156,
     overflow: 'hidden',
-    padding: 28,
+    position: 'relative',
+    width: '100%',
+  },
+  optimizationContent: {
+    paddingHorizontal: 28,
+    paddingVertical: 24,
+    zIndex: 1,
   },
   optimizationCopy: {
-    color: '#D5F2E7',
+    color: '#FFFFFF',
     fontFamily: fontFamily.regular,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: undefined,
     lineHeight: 22,
     marginTop: spacing.sm,
-    maxWidth: 255,
+    width: '100%',
   },
   optimizationTitle: {
-    color: colors.surface,
+    color: '#FFFFFF',
     ...font.manropeBold,
-    fontSize: 18,
+    fontSize: 20,
   },
   plannedBadge: {
     backgroundColor: colors.primarySoft,
