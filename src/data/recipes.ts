@@ -45,7 +45,7 @@ export const recipeCards = [
 ];
 
 export const aiDiscovery = {
-  title: 'AI Discovery',
+  title: 'Discovery',
   message:
     'Based on your workout intensity yesterday, we recommend increasing your leucine intake. Try adding hemp seeds to these recipes.',
   goalLabel: 'Daily Goal Progress',

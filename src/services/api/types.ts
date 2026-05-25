@@ -132,6 +132,7 @@ export type RecognizeFoodInput = {
 };
 
 export type RecognizeFoodResult = {
+  imageUrl: string;
   recognized: {
     recipeName: string;
     description: string;

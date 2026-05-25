@@ -144,7 +144,6 @@ export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: Ed
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Basic Details</Text>
         <LabeledInput label="Recipe Name" onChangeText={setTitle} placeholder="Pho Bo Beef Noodle Soup" value={title} />
-        <LabeledInput label="Image URL or local image URI" onChangeText={setImageUrl} placeholder="https://..." value={imageUrl} />
         <LabeledInput
           label="Description"
           multiline

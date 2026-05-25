@@ -3,7 +3,6 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 
 import { SvgXml } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
-import { aiDiscovery } from '../../data/recipes';
 import { Recipe } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
@@ -21,6 +20,8 @@ const font = {
 } as const;
 
 type RecipesScreenProps = {
+  goal?: 'lose_weight' | 'gain_muscle' | 'healthy_lifestyle' | string;
+  goalPercent?: number;
   onOpenRecipe?: (recipe: Recipe) => void;
   recipes: Recipe[];
 };
@@ -30,7 +31,7 @@ type RecipeCardProps = {
   recipe: Recipe;
 };
 
-export function RecipesScreen({ onOpenRecipe, recipes }: RecipesScreenProps) {
+export function RecipesScreen({ goal = 'healthy_lifestyle', goalPercent = 0, onOpenRecipe, recipes }: RecipesScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(recipeFilters[0]);
   const [featuredRecipeId, setFeaturedRecipeId] = useState<string | null>(null);
@@ -112,7 +113,7 @@ export function RecipesScreen({ onOpenRecipe, recipes }: RecipesScreenProps) {
       {visibleRecipes.length > 0 ? (
         visibleRecipes.map((recipe, index) => (
           <View key={recipe.id}>
-            {index === 1 ? <AiDiscoveryCard /> : null}
+            {index === 1 ? <AiDiscoveryCard goal={goal} goalPercent={goalPercent} /> : null}
             <RecipeCard onPress={() => onOpenRecipe?.(recipe)} recipe={recipe} />
           </View>
         ))
@@ -199,23 +200,57 @@ function RecipeMetric({ icon, label, value }: { icon: string; label: string; val
   );
 }
 
-function AiDiscoveryCard() {
+function AiDiscoveryCard({
+  goal,
+  goalPercent,
+}: {
+  goal: NonNullable<RecipesScreenProps['goal']>;
+  goalPercent: number;
+}) {
+  const displayPercent = Math.max(0, Math.round(goalPercent));
+  const fillPercent = Math.max(0, Math.min(displayPercent, 100));
+  const isFailedForGoal =
+    goal === 'gain_muscle'
+      ? displayPercent < 100
+      : displayPercent > 100;
+  const content =
+    goal === 'gain_muscle'
+      ? {
+          goalLabel: 'Muscle Goal Progress',
+          message:
+            'Prioritize balanced meals with sufficient protein and quality carbohydrates through the day. Keep portions consistent so your energy intake can support muscle recovery and growth.',
+          title: 'Plan Assistant',
+        }
+      : goal === 'healthy_lifestyle'
+      ? {
+          goalLabel: 'Lifestyle Goal Progress',
+          message:
+            'Build your plate with protein, vegetables, and healthy fats at each meal. Keep calories within a steady range and maintain hydration for long-term consistency.',
+          title: 'Plan Assistant',
+        }
+      : {
+          goalLabel: 'Weight Loss Goal Progress',
+          message:
+            'Choose nutrient-dense meals with lean protein and fiber-rich vegetables to stay full longer. Reduce calorie-dense snacks and keep your daily intake controlled.',
+          title: 'Plan Assistant',
+        };
+
   return (
     <View style={styles.discoveryCard}>
       <View style={styles.discoveryRail} />
       <View style={styles.discoveryInner}>
         <View style={styles.discoveryTitleRow}>
           <SvgIcon height={22} source={svgIcons.aiInsight} width={22} />
-          <Text style={styles.discoveryTitle}>{aiDiscovery.title}</Text>
+          <Text style={styles.discoveryTitle}>{content.title}</Text>
         </View>
-        <Text style={styles.discoveryText}>{aiDiscovery.message}</Text>
-        <View style={styles.discoveryGoalBox}>
+        <Text style={styles.discoveryText}>{content.message}</Text>
+        <View style={[styles.discoveryGoalBox, isFailedForGoal && styles.discoveryGoalBoxOver]}>
           <View style={styles.discoveryProgressRow}>
-            <Text style={styles.discoveryLabel}>{aiDiscovery.goalLabel}</Text>
-            <Text style={styles.discoveryPercent}>{aiDiscovery.goalPercent}%</Text>
+            <Text style={[styles.discoveryLabel, isFailedForGoal && styles.discoveryLabelOver]}>{content.goalLabel}</Text>
+            <Text style={[styles.discoveryPercent, isFailedForGoal && styles.discoveryPercentOver]}>{displayPercent}%</Text>
           </View>
           <View style={styles.discoveryTrack}>
-            <View style={[styles.discoveryFill, { width: `${aiDiscovery.goalPercent}%` }]} />
+            <View style={[styles.discoveryFill, isFailedForGoal && styles.discoveryFillOver, { width: `${fillPercent}%` }]} />
           </View>
         </View>
       </View>
@@ -270,12 +305,18 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     height: '100%',
   },
+  discoveryFillOver: {
+    backgroundColor: '#DC2626',
+  },
   discoveryGoalBox: {
     backgroundColor: '#EAF6F1',
     borderRadius: 8,
     marginTop: 22,
     paddingHorizontal: 12,
     paddingVertical: 12,
+  },
+  discoveryGoalBoxOver: {
+    backgroundColor: '#FEE2E2',
   },
   discoveryInner: {
     flex: 1,
@@ -287,10 +328,16 @@ const styles = StyleSheet.create({
     ...font.semiBold,
     fontSize: 12,
   },
+  discoveryLabelOver: {
+    color: '#B91C1C',
+  },
   discoveryPercent: {
     color: colors.primary,
     ...font.semiBold,
     fontSize: 12,
+  },
+  discoveryPercentOver: {
+    color: '#DC2626',
   },
   discoveryProgressRow: {
     alignItems: 'center',

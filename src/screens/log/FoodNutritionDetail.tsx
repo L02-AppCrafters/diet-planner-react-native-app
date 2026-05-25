@@ -35,6 +35,31 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
   const mealLabel = formatMealLabel(selectedMeal, currentMeal);
   const isUserRecipe = Boolean(recipe && !recipe.isDefault && recipe.uid);
   const isRecipeDeleted = Boolean(recipe?.isDeletedFromRecipes);
+  const [isSubmittingQuickAction, setIsSubmittingQuickAction] = useState(false);
+
+  const handleEditPress = async () => {
+    if (!onEditRecipe || isSubmittingQuickAction || isRecipeDeleted) {
+      return;
+    }
+    setIsSubmittingQuickAction(true);
+    try {
+      await Promise.resolve(onEditRecipe());
+    } finally {
+      setIsSubmittingQuickAction(false);
+    }
+  };
+
+  const handleDeletePress = async () => {
+    if (!onDeleteRecipe || isSubmittingQuickAction || isRecipeDeleted) {
+      return;
+    }
+    setIsSubmittingQuickAction(true);
+    try {
+      await Promise.resolve(onDeleteRecipe());
+    } finally {
+      setIsSubmittingQuickAction(false);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -104,13 +129,27 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
         </View>
 
         <View style={[styles.card, styles.microCard]}>
-          <Text style={styles.sectionTitle}>Nutrition & Minerals</Text>
+          <Text style={styles.sectionTitle}>Ingredients</Text>
           <Text style={styles.sectionHint}>Ingredients used for this recipe</Text>
           <View style={styles.microList}>
             {detail.ingredients.map((ingredient) => (
               <View key={`${ingredient.ingredient}-${ingredient.quantity ?? ''}`} style={styles.microRow}>
                 <Text style={styles.microLabel}>{ingredient.ingredient}</Text>
                 <Text style={styles.microValue}>{ingredient.quantity ?? 'To taste'}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+        <View style={[styles.card, styles.microCard]}>
+          <Text style={styles.sectionTitle}>Steps</Text>
+          <Text style={styles.sectionHint}>How to cook this recipe</Text>
+          <View style={styles.stepsList}>
+            {detail.steps.map((step, index) => (
+              <View key={`${index}-${step}`} style={styles.stepRow}>
+                <View style={styles.stepIndexWrap}>
+                  <Text style={styles.stepIndex}>{index + 1}</Text>
+                </View>
+                <Text style={styles.stepText}>{step}</Text>
               </View>
             ))}
           </View>
@@ -181,15 +220,22 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
               <View style={styles.quickActions}>
                 <Pressable
                   accessibilityRole="button"
-                  disabled={isRecipeDeleted}
-                  onPress={onEditRecipe}
-                  style={[styles.actionPill, styles.editPill, isRecipeDeleted && styles.disabledControl]}
+                  disabled={isRecipeDeleted || isSubmittingQuickAction}
+                  onPress={() => void handleEditPress()}
+                  style={[styles.actionPill, styles.editPill, (isRecipeDeleted || isSubmittingQuickAction) && styles.disabledControl]}
                 >
-                  <Text style={styles.editText}>{recipe.isDefault ? 'Copy & Edit' : 'Edit'}</Text>
+                  {isSubmittingQuickAction ? <Text style={styles.actionLoadingIcon}>◌</Text> : null}
+                  <Text style={styles.editText}>{isSubmittingQuickAction ? 'Loading...' : recipe.isDefault ? 'Copy & Edit' : 'Edit'}</Text>
                 </Pressable>
                 {isUserRecipe && !isRecipeDeleted ? (
-                  <Pressable accessibilityRole="button" onPress={onDeleteRecipe} style={[styles.actionPill, styles.deletePill]}>
-                    <Text style={styles.deleteText}>Delete</Text>
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={isSubmittingQuickAction}
+                    onPress={() => void handleDeletePress()}
+                    style={[styles.actionPill, styles.deletePill, isSubmittingQuickAction && styles.disabledControl]}
+                  >
+                    {isSubmittingQuickAction ? <Text style={styles.actionLoadingIcon}>◌</Text> : null}
+                    <Text style={styles.deleteText}>{isSubmittingQuickAction ? 'Loading...' : 'Delete'}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -237,6 +283,10 @@ function buildRecipeDetail(recipe?: Recipe) {
       json?.ingredients && json.ingredients.length > 0
         ? json.ingredients
         : [{ ingredient: 'Ingredients are not available yet', quantity: 'Recipe data' }],
+    steps:
+      json?.steps && json.steps.length > 0
+        ? json.steps
+        : ['Steps are not available yet for this recipe.'],
     macros: [
       {
         backgroundColor: '#CFFBE4',
@@ -303,10 +353,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#E9EDFB',
     borderRadius: 999,
+    flexDirection: 'row',
+    gap: spacing.xs,
     justifyContent: 'center',
     minWidth: 112,
     paddingHorizontal: 16,
     paddingVertical: 11,
+  },
+  actionLoadingIcon: {
+    color: colors.surface,
+    ...font.bold,
+    fontSize: 14,
   },
   addButton: {
     alignItems: 'center',
@@ -688,5 +745,35 @@ const styles = StyleSheet.create({
     ...font.bold,
     fontSize: 19,
     lineHeight: 25,
+  },
+  stepIndex: {
+    color: colors.primary,
+    ...font.bold,
+    fontSize: 12,
+  },
+  stepIndexWrap: {
+    alignItems: 'center',
+    backgroundColor: '#E6F4EE',
+    borderRadius: 999,
+    height: 24,
+    justifyContent: 'center',
+    marginTop: 1,
+    width: 24,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingVertical: 8,
+  },
+  stepText: {
+    color: colors.ink,
+    flex: 1,
+    ...font.regular,
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  stepsList: {
+    gap: spacing.xs,
+    marginTop: spacing.md,
   },
 });

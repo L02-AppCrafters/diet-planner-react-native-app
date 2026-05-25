@@ -320,7 +320,12 @@ export function HomeScreen({
             />
           ) : null}
           {activeTab === 'Recipes' && !isRecipeNutritionDetail && !isEditRecipe && !isCreateRecipe ? (
-            <RecipesScreen onOpenRecipe={openRecipeDetail} recipes={recipes} />
+            <RecipesScreen
+              goal={goal}
+              goalPercent={(Math.max(metrics.calories, 0) / Math.max(metrics.calorieGoal, 1)) * 100}
+              onOpenRecipe={openRecipeDetail}
+              recipes={recipes}
+            />
           ) : null}
           {activeTab === 'Progress' ? (
             <ProgressScreen
@@ -474,7 +479,7 @@ function HomeContent({
       <CalorieRing goal={goal} summary={{ consumed: metrics.calories, goal: calorieGoal }} />
       <WaterTrackerCard onAddWater={onAddWater} waterMl={metrics.waterMl} waterTargetLiters={waterTargetLiters} />
       <HomeEditorsChoiceCard onPress={onOpenRecipe} recipes={recipes} />
-      <InsightCard />
+      <InsightCard goal={goal} />
       <WeeklyOverview calorieGoal={calorieGoal} goal={goal} weeklyCalories={metrics.weeklyCalories} />
     </>
   );
@@ -728,23 +733,23 @@ function WaterCup({ fillLevel }: { fillLevel: number }) {
   );
 }
 
-function InsightCard() {
+function InsightCard({ goal }: { goal: HomeScreenProps['goal'] }) {
+  const insightText =
+    goal === 'gain_muscle'
+      ? 'To build lean muscle, prioritize protein at each meal and keep a small calorie surplus. Pair carbs around training to improve performance and recovery, and stay consistent with hydration.'
+      : goal === 'healthy_lifestyle'
+      ? 'Aim for balanced plates with quality protein, fiber-rich carbs, healthy fats, and colorful vegetables. Keep calories within a steady range, limit ultra-processed snacks, and focus on sustainable daily habits.'
+      : 'For healthy fat loss, keep a moderate calorie deficit and choose high-volume, nutrient-dense foods. Limit fried and high-fat items, increase vegetables and lean protein, and avoid late-night calorie-heavy meals.';
+
   return (
     <View style={styles.insightCard}>
       <View style={styles.insightRail} />
       <View style={styles.insightInner}>
         <View style={styles.insightHeadingRow}>
           <SvgIcon height={22} source={svgIcons.aiInsight} width={22} />
-          <Text style={styles.insightHeading}>AI INSIGHT</Text>
+          <Text style={styles.insightHeading}>INSIGHT</Text>
         </View>
-        <Text style={styles.insightText}>
-          "Your protein intake is excellent today! Consider a light carb-focused snack before your workout to maintain
-          peak energy levels."
-        </Text>
-        <View style={styles.divider} />
-        <Pressable accessibilityLabel="View recommendations">
-          <Text style={styles.recommendation}>View Recommendations →</Text>
-        </Pressable>
+        <Text style={styles.insightText}>{insightText}</Text>
       </View>
     </View>
   );
