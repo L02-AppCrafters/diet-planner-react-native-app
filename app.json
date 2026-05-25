@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "nutri-planner-mobile",
+    "name": "Nutri Planner",
     "slug": "nutri-planner-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -21,7 +21,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.phongvo27ams.nutriplannermobile"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +30,11 @@
     "plugins": [
       "expo-font",
       "expo-secure-store"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b2072b56-ea4c-4b7b-bd5e-28dc76aba946"
+      }
+    }
   }
 }

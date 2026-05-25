@@ -35,6 +35,7 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
   const mealLabel = formatMealLabel(selectedMeal, currentMeal);
   const isUserRecipe = Boolean(recipe && !recipe.isDefault && recipe.uid);
   const isRecipeDeleted = Boolean(recipe?.isDeletedFromRecipes);
+  const [isAddingToLog, setIsAddingToLog] = useState(false);
   const [isSubmittingQuickAction, setIsSubmittingQuickAction] = useState(false);
 
   const handleEditPress = async () => {
@@ -58,6 +59,19 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
       await Promise.resolve(onDeleteRecipe());
     } finally {
       setIsSubmittingQuickAction(false);
+    }
+  };
+
+  const handleAddToLogPress = async () => {
+    if (!onAddToLog || isRecipeDeleted || isAddingToLog) {
+      return;
+    }
+
+    setIsAddingToLog(true);
+    try {
+      await Promise.resolve(onAddToLog(selectedMeal));
+    } finally {
+      setIsAddingToLog(false);
     }
   };
 
@@ -198,9 +212,9 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
           ) : null}
           <Pressable
             accessibilityRole="button"
-            disabled={isRecipeDeleted}
-            onPress={() => !isRecipeDeleted && onAddToLog?.(selectedMeal)}
-            style={[styles.addButton, isRecipeDeleted && styles.disabledControl]}
+            disabled={isRecipeDeleted || isAddingToLog}
+            onPress={() => void handleAddToLogPress()}
+            style={[styles.addButton, (isRecipeDeleted || isAddingToLog) && styles.disabledControl]}
           >
             <Svg height="100%" style={styles.addButtonGradient} width="100%">
               <Defs>
@@ -211,8 +225,8 @@ export function FoodNutritionDetail({ onAddToLog, onDeleteRecipe, onEditRecipe, 
               </Defs>
               <Rect fill="url(#addButtonBlackGradient)" height="100%" width="100%" />
             </Svg>
-            <SvgIcon height={20} source={svgIcons.plusRound} width={20} />
-            <Text style={styles.addButtonText}>Add to Log</Text>
+            {isAddingToLog ? <Text style={styles.addButtonLoadingIcon}>◌</Text> : <SvgIcon height={20} source={svgIcons.plusRound} width={20} />}
+            <Text style={styles.addButtonText}>{isAddingToLog ? 'Adding...' : 'Add to Log'}</Text>
           </Pressable>
           {recipe ? (
             <>
@@ -380,6 +394,12 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
   },
   addButtonText: {
+    color: colors.surface,
+    ...font.bold,
+    fontSize: 16,
+    zIndex: 1,
+  },
+  addButtonLoadingIcon: {
     color: colors.surface,
     ...font.bold,
     fontSize: 16,

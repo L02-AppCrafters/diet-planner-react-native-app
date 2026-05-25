@@ -2,8 +2,6 @@
 
 Nutri Planner Mobile is an Expo React Native prototype for a nutrition planning app. It focuses on a polished mobile experience for onboarding, body profile setup, meal logging, food nutrition details, recipe discovery, and progress tracking.
 
-The current app is built as a local-first UI prototype with mock data and static assets. Database-backed meal logging and persistence can be connected later.
-
 ## Features
 
 - Goal onboarding with selectable nutrition paths
@@ -100,8 +98,27 @@ npx tsc --noEmit
 `-- package.json
 ```
 
-## Notes
+## Build the app with EAS Build
 
-- The app currently uses static data and local React state for navigation and screen flows.
-- Meal logging actions are wired in the UI, but database persistence is planned for a later implementation.
-- The app is optimized for portrait mobile layouts.
+Install the EAS CLI:
+
+```
+npm install -g eas-cli
+```
+
+Log in Expo:
+
+```
+eas login
+```
+
+Initialize the build configuration:
+
+```
+eas build:configure
+```
+Build the app:
+
+```
+eas build -p android --profile preview
+```
