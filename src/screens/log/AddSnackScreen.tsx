@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { Alert } from 'react-native';
 import {
   Image,
   ImageBackground,
@@ -48,20 +50,82 @@ export function AddSnackScreen({
   onLogMeal,
   onOpenDetail,
   onOpenCreateRecipe,
+  onScanImageRecognized,
   onQuickLogRecipe,
   recentMealPlans,
 }: {
   onLogMeal?: () => void;
   onOpenDetail?: () => void;
   onOpenCreateRecipe?: () => void;
+  onScanImageRecognized?: (imageBase64: string) => Promise<void> | void;
   onQuickLogRecipe?: (recipe: Recipe, mealType: MealType) => void | Promise<void>;
   recentMealPlans: MealPlan[];
 }) {
   const [searchText, setSearchText] = useState('');
   const [activeMeal, setActiveMeal] = useState<MealTab>('All Recipes');
+  const [isAnalyzingImage, setIsAnalyzingImage] = useState(false);
+  const [analysisError, setAnalysisError] = useState('');
   const recentRecipes = filterRecentRecipeItems(buildRecentRecipeItems(recentMealPlans), searchText, activeMeal);
   const recentSelections = recentRecipes.slice(0, 5);
   const historyItems = recentRecipes;
+  const handleAnalyzePickedImage = async (asset?: ImagePicker.ImagePickerAsset) => {
+    if (!asset?.base64 || !onScanImageRecognized) {
+      return;
+    }
+
+    setIsAnalyzingImage(true);
+    setAnalysisError('');
+    const uri = asset.uri ?? '';
+    const ext = uri.split('.').pop()?.toLowerCase();
+    const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+    const dataUrl = `data:${mime};base64,${asset.base64}`;
+    try {
+      await onScanImageRecognized(dataUrl);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not analyze this image. Please try again.';
+      setAnalysisError(message);
+    } finally {
+      setIsAnalyzingImage(false);
+    }
+  };
+
+  const openCameraAndScan = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: false,
+      aspect: [4, 3],
+      base64: true,
+      mediaTypes: ['images'],
+      quality: 0.86,
+    });
+
+    if (!result.canceled) {
+      await handleAnalyzePickedImage(result.assets[0]);
+    }
+  };
+
+  const openLibraryAndScan = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      aspect: [4, 3],
+      base64: true,
+      mediaTypes: ['images'],
+      quality: 0.86,
+    });
+
+    if (!result.canceled) {
+      await handleAnalyzePickedImage(result.assets[0]);
+    }
+  };
 
   return (
     <View style={styles.screen}>
@@ -98,7 +162,23 @@ export function AddSnackScreen({
         </ScrollView>
       </View>
 
-      <Pressable accessibilityRole="button" onPress={onOpenCreateRecipe} style={styles.scanCard}>
+      <Pressable
+        accessibilityRole="button"
+        disabled={isAnalyzingImage}
+        onPress={async () => {
+          if (onScanImageRecognized) {
+            Alert.alert('Select Image Source', 'Choose how you want to add food image.', [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Photo Library', onPress: () => void openLibraryAndScan() },
+              { text: 'Camera', onPress: () => void openCameraAndScan() },
+            ]);
+            return;
+          }
+
+          onOpenCreateRecipe?.();
+        }}
+        style={styles.scanCard}
+      >
         <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCardInner}>
         <Svg height="100%" style={styles.scanGradient} width="100%">
           <Defs>
@@ -119,8 +199,38 @@ export function AddSnackScreen({
         </View>
         <Text style={styles.scanTitle}>Scan Barcode</Text>
         <Text style={styles.scanSubtitle}>Instant nutrient extraction</Text>
+        {isAnalyzingImage ? (
+          <View style={styles.scanLoadingOverlay}>
+            <View style={styles.scanLoadingPill}>
+              <Text style={styles.scanLoadingSpinner}>◌</Text>
+              <Text style={styles.scanLoadingText}>Analyzing...</Text>
+            </View>
+          </View>
+        ) : null}
         </ImageBackground>
       </Pressable>
+      {isAnalyzingImage ? (
+        <View style={styles.aiLoadingCard}>
+          <Text style={styles.aiLoadingTitle}>AI Processing</Text>
+          <Text style={styles.aiLoadingText}>Image selected. AI is analyzing your food...</Text>
+          <Text style={styles.aiLoadingText}>Please be patient for a moment.</Text>
+        </View>
+      ) : null}
+      <View style={styles.scanInfoCard}>
+        <Text style={styles.scanInfoTitle}>How to use AI Scan</Text>
+        <Text style={styles.scanInfoText}>
+          You can select an image from your phone or take a photo using your camera.
+        </Text>
+        <Text style={styles.scanInfoText}>
+          The image must be food, drink, fruit, or similar edible items. Non-matching images will not be processed.
+        </Text>
+      </View>
+      {!isAnalyzingImage && analysisError ? (
+        <View style={styles.aiErrorCard}>
+          <Text style={styles.aiErrorTitle}>AI Processing Failed</Text>
+          <Text style={styles.aiErrorText}>{analysisError}</Text>
+        </View>
+      ) : null}
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent Selections</Text>
@@ -360,6 +470,48 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     marginTop: spacing.xl,
   },
+  aiLoadingCard: {
+    backgroundColor: '#ECFDF3',
+    borderColor: '#86E0B8',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  aiLoadingText: {
+    color: '#1F513E',
+    ...font.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  aiLoadingTitle: {
+    color: '#0F7A52',
+    ...font.bold,
+    fontSize: 16,
+  },
+  aiErrorCard: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  aiErrorText: {
+    color: '#991B1B',
+    ...font.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  aiErrorTitle: {
+    color: '#B91C1C',
+    ...font.bold,
+    fontSize: 14,
+  },
   recentAddButton: {
     alignItems: 'center',
     backgroundColor: '#A7EBCF',
@@ -443,12 +595,60 @@ const styles = StyleSheet.create({
   scanCard: {
     borderRadius: 16,
     marginTop: 44,
+    opacity: 1,
     overflow: 'hidden',
   },
   scanCardInner: {
     alignItems: 'center',
     height: 224,
     justifyContent: 'center',
+  },
+  scanLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: 'rgba(7,17,26,0.26)',
+    justifyContent: 'center',
+    zIndex: 2,
+  },
+  scanLoadingPill: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    borderRadius: 999,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  scanLoadingSpinner: {
+    color: colors.primary,
+    ...font.bold,
+    fontSize: 16,
+  },
+  scanLoadingText: {
+    color: colors.primary,
+    ...font.semiBold,
+    fontSize: 13,
+  },
+  scanInfoCard: {
+    backgroundColor: '#EFF6FF',
+    borderColor: '#BFDBFE',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  scanInfoText: {
+    color: '#1E3A8A',
+    ...font.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  scanInfoTitle: {
+    color: '#1D4ED8',
+    ...font.bold,
+    fontSize: 16,
   },
   scanCorner: {
     borderColor: '#34D399',

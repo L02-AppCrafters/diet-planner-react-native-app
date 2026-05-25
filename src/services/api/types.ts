@@ -125,3 +125,25 @@ export type UpsertDailyLogInput = {
   currentWeight?: number;
   notes?: string;
 };
+
+export type RecognizeFoodInput = {
+  imageBase64: string;
+  prompt?: string;
+};
+
+export type RecognizeFoodResult = {
+  recognized: {
+    recipeName: string;
+    description: string;
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+    category: string[];
+    cookTime: number;
+    serveTo: number;
+    calories: number;
+    proteins: number;
+    carbs: number;
+    fats: number;
+    ingredients: Array<{ ingredient: string; quantity?: string }>;
+    steps: string[];
+  };
+};

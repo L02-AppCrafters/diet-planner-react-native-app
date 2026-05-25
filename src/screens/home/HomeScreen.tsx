@@ -67,6 +67,7 @@ type HomeScreenProps = {
   onAddWater: () => void | Promise<void>;
   onUpdateWaterTarget: (nextTargetLiters: number) => void;
   onDeleteRecipe: (recipe: Recipe) => Promise<void>;
+  onRecognizeFoodFromImage: (imageBase64: string) => Promise<Recipe>;
   onSelectLogDate: (date: string) => void | Promise<void>;
   onUpdateRecipe: (recipe: Recipe) => Promise<Recipe>;
   recipes: Recipe[];
@@ -126,6 +127,7 @@ export function HomeScreen({
   onAddWater,
   onUpdateWaterTarget,
   onDeleteRecipe,
+  onRecognizeFoodFromImage,
   onOpenSettings,
   onSelectLogDate,
   onTabChange,
@@ -138,7 +140,8 @@ export function HomeScreen({
   waterTargetLiters,
 }: HomeScreenProps) {
   const scrollViewRef = useRef<ScrollView>(null);
-  const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
+  const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail' | 'scanError'>('log');
+  const [scanErrorMessage, setScanErrorMessage] = useState('');
   const [recipeRoute, setRecipeRoute] = useState<'list' | 'detail' | 'edit' | 'create'>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const scrollToTop = () => {
@@ -171,6 +174,7 @@ export function HomeScreen({
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
   const isMainIngredients = activeTab === 'Log' && logRoute === 'mainIngredients';
   const isFoodNutritionDetail = activeTab === 'Log' && logRoute === 'foodNutritionDetail';
+  const isScanError = activeTab === 'Log' && logRoute === 'scanError';
   const isRecipeNutritionDetail = activeTab === 'Recipes' && recipeRoute === 'detail' && selectedRecipe !== null;
   const isEditRecipe = activeTab === 'Recipes' && recipeRoute === 'edit' && selectedRecipe !== null;
   const isCreateRecipe = activeTab === 'Recipes' && recipeRoute === 'create' && selectedRecipe !== null;
@@ -180,6 +184,8 @@ export function HomeScreen({
       ? 'Main Ingredients'
       : isFoodNutritionDetail
       ? 'Food Nutrition Detail'
+      : isScanError
+      ? 'Scan Error'
       : isAddSnack
       ? 'Add Snack'
       : activeTab === 'Log'
@@ -208,7 +214,7 @@ export function HomeScreen({
           />
         ) : (
           <Header
-            onBack={isMainIngredients ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
+            onBack={isMainIngredients || isScanError ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
             onOpenSettings={onOpenSettings}
             title={headerTitle}
           />
@@ -253,33 +259,21 @@ export function HomeScreen({
             <AddSnackScreen
               onLogMeal={logMealAndReturnToPlan}
               onOpenCreateRecipe={() => {
-                const now = new Date().toISOString();
-                setSelectedRecipe({
-                  id: `draft-${now}`,
-                  uid: null,
-                  recipeName: '',
-                  imageUrl: '',
-                  isDefault: false,
-                  createdAt: now,
-                  updatedAt: now,
-                  jsonData: {
-                    recipeName: '',
-                    mealType: 'snack',
-                    category: ['Snack'],
-                    cookTime: 0,
-                    serveTo: 1,
-                    calories: 0,
-                    proteins: 0,
-                    carbs: 0,
-                    fats: 0,
-                    description: '',
-                    ingredients: [],
-                    steps: [],
-                  },
-                });
-                setRecipeRoute('create');
-                onTabChange('Recipes');
-                scrollToTop();
+                // Handled by camera/AI flow in AddSnackScreen.
+              }}
+              onScanImageRecognized={async (base64Image) => {
+                try {
+                  const recognized = await onRecognizeFoodFromImage(base64Image);
+                  setSelectedRecipe(recognized);
+                  setRecipeRoute('create');
+                  onTabChange('Recipes');
+                  scrollToTop();
+                } catch (error) {
+                  setScanErrorMessage(error instanceof Error ? error.message : 'The selected image is not a supported food/drink/fruit image.');
+                  setLogRoute('scanError');
+                  onTabChange('Log');
+                  scrollToTop();
+                }
               }}
               onOpenDetail={() => {
                 setSelectedRecipe(null);
@@ -293,6 +287,7 @@ export function HomeScreen({
             />
           ) : null}
           {isMainIngredients ? <MainIngredientsScreen /> : null}
+          {isScanError ? <ScanErrorScreen message={scanErrorMessage} onBack={() => setLogRoute('addSnack')} /> : null}
           {isFoodNutritionDetail ? (
             <FoodNutritionDetail
               onAddToLog={logMealAndReturnToPlan}
@@ -382,6 +377,18 @@ function Header({
       <Text style={styles.logo}>{title}</Text>
       <Pressable accessibilityLabel="Open settings" onPress={onOpenSettings} style={styles.gearButton}>
         <SvgIcon height={20} source={svgIcons.settings} width={21} />
+      </Pressable>
+    </View>
+  );
+}
+
+function ScanErrorScreen({ message, onBack }: { message: string; onBack: () => void }) {
+  return (
+    <View style={styles.scanErrorCard}>
+      <Text style={styles.scanErrorTitle}>Image Not Supported</Text>
+      <Text style={styles.scanErrorText}>{message || 'Please choose a clear photo of food, drink, or fruit.'}</Text>
+      <Pressable accessibilityRole="button" onPress={onBack} style={styles.scanErrorButton}>
+        <Text style={styles.scanErrorButtonText}>Choose Another Image</Text>
       </Pressable>
     </View>
   );
@@ -1723,6 +1730,38 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 132,
     paddingHorizontal: 25,
+  },
+  scanErrorButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    marginTop: spacing.lg,
+    paddingVertical: 12,
+  },
+  scanErrorButtonText: {
+    color: colors.surface,
+    ...font.bold,
+    fontSize: 14,
+  },
+  scanErrorCard: {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: spacing.xl,
+    padding: spacing.xl,
+  },
+  scanErrorText: {
+    color: '#991B1B',
+    ...font.medium,
+    fontSize: 14,
+    lineHeight: 22,
+    marginTop: spacing.sm,
+  },
+  scanErrorTitle: {
+    color: '#B91C1C',
+    ...font.manropeBold,
+    fontSize: 22,
   },
   detailScrollContent: {
     paddingHorizontal: 0,
