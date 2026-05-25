@@ -17,12 +17,13 @@ const font = {
 const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 
 type EditRecipeScreenProps = {
+  mode?: 'edit' | 'create';
   onCancel: () => void;
   onSave: (recipe: Recipe) => Promise<void> | void;
   recipe: Recipe;
 };
 
-export function EditRecipeScreen({ onCancel, onSave, recipe }: EditRecipeScreenProps) {
+export function EditRecipeScreen({ mode = 'edit', onCancel, onSave, recipe }: EditRecipeScreenProps) {
   const [title, setTitle] = useState(recipe.jsonData.recipeName ?? recipe.recipeName);
   const [description, setDescription] = useState(recipe.jsonData.description ?? '');
   const [imageUrl, setImageUrl] = useState(recipe.imageUrl);
@@ -89,8 +90,12 @@ export function EditRecipeScreen({ onCancel, onSave, recipe }: EditRecipeScreenP
     <View style={styles.screen}>
       <View style={styles.heading}>
         <Text style={styles.eyebrow}>RECIPE STUDIO</Text>
-        <Text style={styles.title}>Edit Recipe</Text>
-        <Text style={styles.subtitle}>Update the image, nutrition, ingredients, and cooking steps for this meal.</Text>
+        <Text style={styles.title}>{mode === 'create' ? 'Create Recipe' : 'Edit Recipe'}</Text>
+        <Text style={styles.subtitle}>
+          {mode === 'create'
+            ? 'Create a new recipe with image, nutrition, ingredients, and cooking steps.'
+            : 'Update the image, nutrition, ingredients, and cooking steps for this meal.'}
+        </Text>
       </View>
 
       <View style={styles.photoCard}>
@@ -164,7 +169,7 @@ export function EditRecipeScreen({ onCancel, onSave, recipe }: EditRecipeScreenP
           <Text style={styles.cancelText}>Cancel</Text>
         </Pressable>
         <Pressable accessibilityRole="button" onPress={save} style={[styles.actionButton, styles.saveButton]}>
-          <Text style={styles.saveText}>Save Changes</Text>
+          <Text style={styles.saveText}>{mode === 'create' ? 'Create Recipe' : 'Save Changes'}</Text>
         </Pressable>
       </View>
     </View>

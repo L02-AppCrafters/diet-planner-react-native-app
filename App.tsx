@@ -568,7 +568,7 @@ export default function App() {
   // 4. Luồng ứng dụng chính (HomeScreen)
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.header} />
+      <StatusBar barStyle="dark-content" backgroundColor={colors.header} hidden={false} translucent={false} />
       <HomeScreen
         activeTab={activeTab}
         dailyLog={selectedDailyLog}

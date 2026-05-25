@@ -139,7 +139,7 @@ export function HomeScreen({
 }: HomeScreenProps) {
   const scrollViewRef = useRef<ScrollView>(null);
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
-  const [recipeRoute, setRecipeRoute] = useState<'list' | 'detail' | 'edit'>('list');
+  const [recipeRoute, setRecipeRoute] = useState<'list' | 'detail' | 'edit' | 'create'>('list');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const scrollToTop = () => {
     requestAnimationFrame(() => {
@@ -173,6 +173,7 @@ export function HomeScreen({
   const isFoodNutritionDetail = activeTab === 'Log' && logRoute === 'foodNutritionDetail';
   const isRecipeNutritionDetail = activeTab === 'Recipes' && recipeRoute === 'detail' && selectedRecipe !== null;
   const isEditRecipe = activeTab === 'Recipes' && recipeRoute === 'edit' && selectedRecipe !== null;
+  const isCreateRecipe = activeTab === 'Recipes' && recipeRoute === 'create' && selectedRecipe !== null;
   const isNutritionDetail = isFoodNutritionDetail || isRecipeNutritionDetail;
   const headerTitle =
     isMainIngredients
@@ -251,6 +252,35 @@ export function HomeScreen({
           {isAddSnack ? (
             <AddSnackScreen
               onLogMeal={logMealAndReturnToPlan}
+              onOpenCreateRecipe={() => {
+                const now = new Date().toISOString();
+                setSelectedRecipe({
+                  id: `draft-${now}`,
+                  uid: null,
+                  recipeName: '',
+                  imageUrl: '',
+                  isDefault: false,
+                  createdAt: now,
+                  updatedAt: now,
+                  jsonData: {
+                    recipeName: '',
+                    mealType: 'snack',
+                    category: ['Snack'],
+                    cookTime: 0,
+                    serveTo: 1,
+                    calories: 0,
+                    proteins: 0,
+                    carbs: 0,
+                    fats: 0,
+                    description: '',
+                    ingredients: [],
+                    steps: [],
+                  },
+                });
+                setRecipeRoute('create');
+                onTabChange('Recipes');
+                scrollToTop();
+              }}
               onOpenDetail={() => {
                 setSelectedRecipe(null);
                 setLogRoute('foodNutritionDetail');
@@ -282,9 +312,10 @@ export function HomeScreen({
               recipe={selectedRecipe}
             />
           ) : null}
-          {isEditRecipe && selectedRecipe ? (
+          {(isEditRecipe || isCreateRecipe) && selectedRecipe ? (
             <EditRecipeScreen
-              onCancel={() => setRecipeRoute('detail')}
+              mode={isCreateRecipe ? 'create' : 'edit'}
+              onCancel={() => setRecipeRoute(isCreateRecipe ? 'list' : 'detail')}
               onSave={async (recipe) => {
                 const updatedRecipe = await onUpdateRecipe(recipe);
                 setSelectedRecipe(updatedRecipe);
@@ -293,7 +324,7 @@ export function HomeScreen({
               recipe={selectedRecipe}
             />
           ) : null}
-          {activeTab === 'Recipes' && !isRecipeNutritionDetail && !isEditRecipe ? (
+          {activeTab === 'Recipes' && !isRecipeNutritionDetail && !isEditRecipe && !isCreateRecipe ? (
             <RecipesScreen onOpenRecipe={openRecipeDetail} recipes={recipes} />
           ) : null}
           {activeTab === 'Progress' ? (

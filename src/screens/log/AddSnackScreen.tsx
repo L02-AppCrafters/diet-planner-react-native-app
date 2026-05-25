@@ -47,11 +47,13 @@ type RecentRecipeItem = {
 export function AddSnackScreen({
   onLogMeal,
   onOpenDetail,
+  onOpenCreateRecipe,
   onQuickLogRecipe,
   recentMealPlans,
 }: {
   onLogMeal?: () => void;
   onOpenDetail?: () => void;
+  onOpenCreateRecipe?: () => void;
   onQuickLogRecipe?: (recipe: Recipe, mealType: MealType) => void | Promise<void>;
   recentMealPlans: MealPlan[];
 }) {
@@ -96,7 +98,8 @@ export function AddSnackScreen({
         </ScrollView>
       </View>
 
-      <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCard}>
+      <Pressable accessibilityRole="button" onPress={onOpenCreateRecipe} style={styles.scanCard}>
+        <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCardInner}>
         <Svg height="100%" style={styles.scanGradient} width="100%">
           <Defs>
             <LinearGradient id="scanGradient" x1="0" x2="0" y1="0" y2="1">
@@ -116,7 +119,8 @@ export function AddSnackScreen({
         </View>
         <Text style={styles.scanTitle}>Scan Barcode</Text>
         <Text style={styles.scanSubtitle}>Instant nutrient extraction</Text>
-      </ImageBackground>
+        </ImageBackground>
+      </Pressable>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent Selections</Text>
@@ -437,12 +441,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scanCard: {
-    alignItems: 'center',
     borderRadius: 16,
-    height: 224,
-    justifyContent: 'center',
     marginTop: 44,
     overflow: 'hidden',
+  },
+  scanCardInner: {
+    alignItems: 'center',
+    height: 224,
+    justifyContent: 'center',
   },
   scanCorner: {
     borderColor: '#34D399',
