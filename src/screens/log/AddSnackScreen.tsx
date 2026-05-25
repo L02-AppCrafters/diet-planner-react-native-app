@@ -13,6 +13,7 @@ import {
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
+import { MealPlan, Recipe } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
@@ -31,17 +32,36 @@ const greekYogurtImage = require('../../../assets/greek-yogurt.png');
 const matchaLatteImage = require('../../../assets/matcha-latte.png');
 const scanBarcodeBackground = require('../../../assets/scan-barcode-background.png');
 
-type MealTab = 'Breakfast' | 'Lunch' | 'Dinner';
+type MealType = 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+type MealTab = 'All Recipes' | MealType;
+type RecentRecipeItem = {
+  calories: number;
+  createdAt: string;
+  image: ImageSourcePropType;
+  mealType: MealType;
+  recipe: Recipe;
+  source: string;
+  title: string;
+};
 
 export function AddSnackScreen({
   onLogMeal,
   onOpenDetail,
+  onOpenCreateRecipe,
+  onQuickLogRecipe,
+  recentMealPlans,
 }: {
   onLogMeal?: () => void;
   onOpenDetail?: () => void;
+  onOpenCreateRecipe?: () => void;
+  onQuickLogRecipe?: (recipe: Recipe, mealType: MealType) => void | Promise<void>;
+  recentMealPlans: MealPlan[];
 }) {
   const [searchText, setSearchText] = useState('');
-  const [activeMeal, setActiveMeal] = useState<MealTab>('Breakfast');
+  const [activeMeal, setActiveMeal] = useState<MealTab>('All Recipes');
+  const recentRecipes = filterRecentRecipeItems(buildRecentRecipeItems(recentMealPlans), searchText, activeMeal);
+  const recentSelections = recentRecipes.slice(0, 5);
+  const historyItems = recentRecipes;
 
   return (
     <View style={styles.screen}>
@@ -61,20 +81,25 @@ export function AddSnackScreen({
       </View>
 
       <View style={styles.segmented}>
-        {(['Breakfast', 'Lunch', 'Dinner'] as const).map((item) => (
-          <Pressable
-            accessibilityRole="tab"
-            accessibilityState={{ selected: activeMeal === item }}
-            key={item}
-            onPress={() => setActiveMeal(item)}
-            style={[styles.segmentItem, activeMeal === item && styles.segmentItemActive]}
-          >
-            <Text style={[styles.segmentText, activeMeal === item && styles.segmentTextActive]}>{item}</Text>
-          </Pressable>
-        ))}
+        <ScrollView contentContainerStyle={styles.segmentedScrollContent} horizontal showsHorizontalScrollIndicator={false}>
+          {(['All Recipes', 'Breakfast', 'Lunch', 'Dinner', 'Snack'] as const).map((item) => (
+            <Pressable
+              accessibilityRole="tab"
+              accessibilityState={{ selected: activeMeal === item }}
+              key={item}
+              onPress={() => setActiveMeal(item)}
+              style={[styles.segmentItem, activeMeal === item && styles.segmentItemActive]}
+            >
+              <Text numberOfLines={1} style={[styles.segmentText, activeMeal === item && styles.segmentTextActive]}>
+                {item}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       </View>
 
-      <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCard}>
+      <Pressable accessibilityRole="button" onPress={onOpenCreateRecipe} style={styles.scanCard}>
+        <ImageBackground imageStyle={styles.scanImage} source={scanBarcodeBackground} style={styles.scanCardInner}>
         <Svg height="100%" style={styles.scanGradient} width="100%">
           <Defs>
             <LinearGradient id="scanGradient" x1="0" x2="0" y1="0" y2="1">
@@ -94,43 +119,56 @@ export function AddSnackScreen({
         </View>
         <Text style={styles.scanTitle}>Scan Barcode</Text>
         <Text style={styles.scanSubtitle}>Instant nutrient extraction</Text>
-      </ImageBackground>
+        </ImageBackground>
+      </Pressable>
 
       <View style={styles.sectionHeader}>
         <Text style={styles.sectionTitle}>Recent Selections</Text>
-        <Text style={styles.viewHistory}>View History</Text>
       </View>
 
-      <Pressable onPress={onOpenDetail} style={styles.recentHeroCard}>
-        <View style={styles.recentRail} />
-        <Image source={avocadoToastImage} style={styles.recentImage} />
-        <View style={styles.recentCopy}>
-          <Text style={styles.recentTitle}>Avocado Toast</Text>
-          <Text style={styles.recentMeta}>280 kcal {'\u2022'} Artisan Pantry</Text>
+      {recentSelections.length > 0 ? (
+        <View style={styles.historyList}>
+          {recentSelections.map((item, index) => (
+            <RecentMealCard
+              item={item}
+              key={`recent-${item.recipe.id}-${item.createdAt}-${index}`}
+              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal === 'All Recipes' ? item.mealType : activeMeal)}
+              onPress={onOpenDetail}
+            />
+          ))}
         </View>
-        <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.recentAddButton}>
-          <Text style={styles.recentAddText}>+</Text>
-        </Pressable>
-      </Pressable>
+      ) : (
+        <View style={styles.emptyRecentCard}>
+          <Text style={styles.emptyRecentTitle}>{searchText.trim() ? 'No matching foods' : 'No logged foods yet'}</Text>
+          <Text style={styles.emptyRecentText}>
+            {searchText.trim() ? 'Try another recipe name, meal type, or ingredient keyword.' : 'Meals you log this week will appear here for quick logging.'}
+          </Text>
+        </View>
+      )}
 
-      <View style={styles.recentGrid}>
-        <SmallRecentCard
-          accent="#0B6BD3"
-          calories="120 kcal"
-          image={greekYogurtImage}
-          onLogMeal={onLogMeal}
-          onPress={onOpenDetail}
-          title="Greek Yogurt"
-        />
-        <SmallRecentCard
-          accent={colors.primaryMid}
-          calories="45 kcal"
-          image={matchaLatteImage}
-          onLogMeal={onLogMeal}
-          onPress={onOpenDetail}
-          title="Matcha Latte"
-        />
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>History of this Week</Text>
       </View>
+
+      {historyItems.length > 0 ? (
+        <View style={styles.historyList}>
+          {historyItems.map((item, index) => (
+            <RecentMealCard
+              item={item}
+              key={`history-${item.recipe.id}-${item.createdAt}-${index}`}
+              onLogMeal={() => onQuickLogRecipe?.(item.recipe, activeMeal === 'All Recipes' ? item.mealType : activeMeal)}
+              onPress={onOpenDetail}
+            />
+          ))}
+        </View>
+      ) : (
+        <View style={styles.emptyRecentCard}>
+          <Text style={styles.emptyRecentTitle}>{searchText.trim() ? 'No matching foods' : 'No logged foods yet'}</Text>
+          <Text style={styles.emptyRecentText}>
+            {searchText.trim() ? 'Try another recipe name, meal type, or ingredient keyword.' : 'Meals you log this week will appear in your history.'}
+          </Text>
+        </View>
+      )}
 
       <View style={styles.recommendationCard}>
         <View style={styles.insightRail} />
@@ -167,34 +205,85 @@ export function AddSnackScreen({
   );
 }
 
-function SmallRecentCard({
-  accent,
-  calories,
-  image,
+function RecentMealCard({
+  item,
   onLogMeal,
   onPress,
-  title,
 }: {
-  accent: string;
-  calories: string;
-  image: ImageSourcePropType;
+  item: RecentRecipeItem;
   onLogMeal?: () => void;
   onPress?: () => void;
-  title: string;
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.smallRecentCard}>
-      <View style={[styles.smallRecentRail, { backgroundColor: accent }]} />
-      <Image source={image} style={styles.smallRecentImage} />
-      <View style={styles.smallRecentCopy}>
-        <Text style={styles.smallRecentTitle}>{title}</Text>
-        <Text style={styles.smallRecentCalories}>{calories}</Text>
+    <Pressable onPress={onPress} style={styles.recentHeroCard}>
+      <View style={styles.recentRail} />
+      <Image source={item.image} style={styles.recentImage} />
+      <View style={styles.recentCopy}>
+        <Text style={styles.recentTitle}>{item.title}</Text>
+        <Text style={styles.recentMeta}>
+          {item.calories} kcal {'\u2022'} {item.source}
+        </Text>
       </View>
-      <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.smallRecentButton}>
-        <Text style={styles.smallRecentButtonText}>Log</Text>
+      <Pressable accessibilityRole="button" onPress={onLogMeal} style={styles.recentAddButton}>
+        <Text style={styles.recentAddText}>+</Text>
       </Pressable>
     </Pressable>
   );
+}
+
+function filterRecentRecipeItems(items: RecentRecipeItem[], searchText: string, activeMeal: MealTab) {
+  const query = normalizeSearchText(searchText);
+  const mealFilteredItems = activeMeal === 'All Recipes' ? items : items.filter((item) => item.mealType === activeMeal);
+
+  if (!query) {
+    return mealFilteredItems;
+  }
+
+  return mealFilteredItems.filter((item) => {
+    const recipe = item.recipe;
+    const json = recipe.jsonData;
+    const searchable = [
+      item.title,
+      item.source,
+      json.description,
+      json.mealType,
+      ...(json.category ?? []),
+      ...(json.ingredients ?? []).map((ingredient) => `${ingredient.ingredient} ${ingredient.quantity ?? ''}`),
+    ].join(' ');
+
+    return normalizeSearchText(searchable).includes(query);
+  });
+}
+
+function normalizeSearchText(value: string) {
+  return value.trim().toLowerCase();
+}
+
+function buildRecentRecipeItems(mealPlans: MealPlan[]): RecentRecipeItem[] {
+  return mealPlans
+    .filter((mealPlan) => mealPlan.recipe)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .map((mealPlan) => {
+      const recipe = mealPlan.recipe as Recipe;
+
+      return {
+        calories: recipe.jsonData.calories ?? 0,
+        createdAt: mealPlan.createdAt,
+        image: recipe.imageUrl ? { uri: recipe.imageUrl } : avocadoToastImage,
+        mealType: titleCase(mealPlan.mealType) as MealType,
+        recipe,
+        source: recipe.jsonData.category?.[0] ?? 'Recipe Log',
+        title: recipe.jsonData.recipeName ?? recipe.recipeName,
+      };
+    });
+}
+
+function titleCase(value: string) {
+  if (!value) {
+    return 'Snack';
+  }
+
+  return `${value.charAt(0).toUpperCase()}${value.slice(1).toLowerCase()}`;
 }
 
 function DiscoverCard({
@@ -267,6 +356,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 999,
     width: 4,
   },
+  historyList: {
+    gap: spacing.md,
+    marginTop: spacing.xl,
+  },
   recentAddButton: {
     alignItems: 'center',
     backgroundColor: '#A7EBCF',
@@ -287,11 +380,6 @@ const styles = StyleSheet.create({
   recentCopy: {
     flex: 1,
     marginLeft: 20,
-  },
-  recentGrid: {
-    flexDirection: 'row',
-    gap: 14,
-    marginTop: spacing.xl,
   },
   recentHeroCard: {
     alignItems: 'center',
@@ -353,12 +441,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scanCard: {
-    alignItems: 'center',
     borderRadius: 16,
-    height: 224,
-    justifyContent: 'center',
     marginTop: 44,
     overflow: 'hidden',
+  },
+  scanCardInner: {
+    alignItems: 'center',
+    height: 224,
+    justifyContent: 'center',
   },
   scanCorner: {
     borderColor: '#34D399',
@@ -457,16 +547,21 @@ const styles = StyleSheet.create({
   segmented: {
     backgroundColor: colors.accentSoft,
     borderRadius: 16,
-    flexDirection: 'row',
     marginTop: 24,
     padding: 5,
+  },
+  segmentedScrollContent: {
+    alignItems: 'center',
+    columnGap: 6,
+    paddingRight: 6,
   },
   segmentItem: {
     alignItems: 'center',
     borderRadius: 11,
-    flex: 1,
+    minWidth: 88,
     height: 50,
     justifyContent: 'center',
+    paddingHorizontal: 12,
   },
   segmentItemActive: {
     backgroundColor: colors.surface,
@@ -480,60 +575,28 @@ const styles = StyleSheet.create({
     color: '#006C49',
     ...font.semiBold,
   },
-  smallRecentButton: {
+  emptyRecentCard: {
     alignItems: 'center',
     backgroundColor: colors.accentSoft,
-    borderRadius: 10,
-    height: 42,
-    justifyContent: 'center',
+    borderColor: '#DCE4F5',
+    borderRadius: 18,
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    marginTop: spacing.xl,
+    paddingHorizontal: 24,
+    paddingVertical: 28,
   },
-  smallRecentButtonText: {
-    color: colors.primary,
-    ...font.bold,
-    fontSize: 14,
+  emptyRecentText: {
+    color: colors.inkMuted,
+    ...font.regular,
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: spacing.xs,
+    textAlign: 'center',
   },
-  smallRecentCalories: {
-    color: '#3C4A3C',
-    fontFamily: fontFamily.regular,
-    fontSize: 12,
-    fontWeight: undefined,
-    marginTop: 6,
-  },
-  smallRecentCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    flex: 1,
-    height: 204,
-    justifyContent: 'space-between',
-    overflow: 'hidden',
-    paddingBottom: 14,
-    paddingHorizontal: 20,
-    paddingTop: 26,
-  },
-  smallRecentCopy: {
-    marginBottom: 0,
-  },
-  smallRecentImage: {
-    borderRadius: 8,
-    height: 56,
-    width: 56,
-  },
-  smallRecentRail: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    top: 0,
-    width: 4,
-  },
-  smallRecentTitle: {
+  emptyRecentTitle: {
     color: colors.ink,
     ...font.bold,
     fontSize: 16,
-    lineHeight: 20,
-  },
-  viewHistory: {
-    color: '#006C49',
-    ...font.semiBold,
-    fontSize: 14,
   },
 });

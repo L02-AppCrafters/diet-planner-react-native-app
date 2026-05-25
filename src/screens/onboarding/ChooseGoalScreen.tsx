@@ -51,7 +51,7 @@ const goals: GoalOption[] = [
 ];
 
 export function ChooseGoalScreen({ onSelectGoal }: ChooseGoalScreenProps) {
-  const [selectedGoal, setSelectedGoal] = useState<string>('healthy_lifestyle');
+  const [selectedGoal, setSelectedGoal] = useState<string>('lose_weight');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -90,7 +90,7 @@ export function ChooseGoalScreen({ onSelectGoal }: ChooseGoalScreenProps) {
           })}
         </View>
 
-        <View style={styles.aiBox}>
+        {/* <View style={styles.aiBox}>
           <View style={styles.aiRail} />
           <View style={styles.aiContent}>
             <View style={styles.aiHeader}>
@@ -102,7 +102,7 @@ export function ChooseGoalScreen({ onSelectGoal }: ChooseGoalScreenProps) {
               specializing.
             </Text>
           </View>
-        </View>
+        </View> */}
 
         <Pressable style={styles.btnContinue} onPress={() => onSelectGoal(selectedGoal)}>
           <Text style={styles.btnText}>Continue</Text>

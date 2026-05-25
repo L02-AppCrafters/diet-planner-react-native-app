@@ -1,39 +1,22 @@
-import { useState } from 'react';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
-import { macros } from '../../data/dailyTracker';
 import { AddSnackScreen } from '../log/AddSnackScreen';
 import { FoodNutritionDetail, FoodNutritionHeader } from '../log/FoodNutritionDetail';
 import { LogScreen } from '../log/LogScreen';
 import { MainIngredientsScreen } from '../log/MainIngredientsScreen';
 import { ProgressScreen } from '../progress/ProgressScreen';
 import { RecipesScreen } from '../recipes/RecipesScreen';
+import { EditRecipeScreen } from '../recipes/EditRecipeScreen';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
 import { AppTab } from '../../types/navigation';
+import { DailyLog, MealPlan, Recipe } from '../../services/api';
 
-const lunchImage = require('../../../assets/lunch.png');
-const calorieSummary = {
-  goal: 2450,
-  left: 1210,
-};
-const waterConsumedLiters = 1.2;
-const waterGoalLiters = 2.5;
 const waterCupLiters = 0.5;
-const waterCups = Array.from({ length: waterGoalLiters / waterCupLiters }, (_, index) => index);
-const weeklyCalories = [
-  { day: 'MON', calories: 1980 },
-  { day: 'TUE', calories: 2140 },
-  { day: 'WED', calories: 1240 },
-  { day: 'THU', calories: 2360 },
-  { day: 'FRI', calories: 1840 },
-  { day: 'SAT', calories: 2210 },
-  { day: 'SUN', calories: 1680 },
-];
-const maxWeeklyCalories = Math.max(...weeklyCalories.map((item) => item.calories));
 const nutritionColors = {
   CALS: '#006C49',
   FAT: '#F59E0B',
@@ -76,13 +59,42 @@ const font = {
 
 type HomeScreenProps = {
   activeTab: AppTab;
+  dailyLog: DailyLog | null;
+  goal: 'lose_weight' | 'gain_muscle' | 'healthy_lifestyle' | string;
+  mealPlans: MealPlan[];
+  metrics: HomeMetrics;
+  onAddRecipeToLog: (recipe: Recipe, mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => Promise<void>;
+  onAddWater: () => void | Promise<void>;
+  onUpdateWaterTarget: (nextTargetLiters: number) => void;
+  onDeleteRecipe: (recipe: Recipe) => Promise<void>;
+  onSelectLogDate: (date: string) => void | Promise<void>;
+  onUpdateRecipe: (recipe: Recipe) => Promise<Recipe>;
+  recipes: Recipe[];
+  selectedLogDate: string;
   onTabChange: (tab: AppTab) => void;
   onOpenSettings?: () => void;
+  profileWeight: number;
+  weeklyLogs: DailyLog[];
+  weeklyMealPlans: MealPlan[];
+  waterTargetLiters: number;
+};
+
+export type HomeMetrics = {
+  carbs: number;
+  carbsGoal: number;
+  calories: number;
+  calorieGoal: number;
+  fats: number;
+  fatsGoal: number;
+  proteins: number;
+  proteinGoal: number;
+  waterMl: number;
+  weeklyCalories: Array<{ calories: number; day: string; isToday: boolean }>;
 };
 
 type CalorieSummary = {
+  consumed: number;
   goal: number;
-  left: number;
 };
 
 const tabs: Array<{ key: AppTab; icon: string; iconHeight: number; iconWidth: number }> = [
@@ -94,24 +106,75 @@ const tabs: Array<{ key: AppTab; icon: string; iconHeight: number; iconWidth: nu
 
 function getCalorieRingMetrics(summary: CalorieSummary) {
   const goal = Math.max(summary.goal, 1);
-  const left = Math.min(Math.max(summary.left, 0), goal);
-  const leftProgress = left / goal;
+  const consumed = Math.max(summary.consumed, 0);
+  const consumedProgress = consumed / goal;
 
   return {
-    left,
-    leftPercent: Math.round(leftProgress * 100),
-    leftProgress,
+    consumed,
+    consumedPercent: Math.round(consumedProgress * 100),
+    ringProgress: Math.min(consumedProgress, 1),
   };
 }
 
-export function HomeScreen({ activeTab, onOpenSettings, onTabChange }: HomeScreenProps) {
+export function HomeScreen({
+  activeTab,
+  dailyLog,
+  goal,
+  mealPlans,
+  metrics,
+  onAddRecipeToLog,
+  onAddWater,
+  onUpdateWaterTarget,
+  onDeleteRecipe,
+  onOpenSettings,
+  onSelectLogDate,
+  onTabChange,
+  onUpdateRecipe,
+  profileWeight,
+  recipes,
+  selectedLogDate,
+  weeklyLogs,
+  weeklyMealPlans,
+  waterTargetLiters,
+}: HomeScreenProps) {
+  const scrollViewRef = useRef<ScrollView>(null);
   const [logRoute, setLogRoute] = useState<'log' | 'addSnack' | 'mainIngredients' | 'foodNutritionDetail'>('log');
-  const logMealAndReturnToPlan = () => {
+  const [recipeRoute, setRecipeRoute] = useState<'list' | 'detail' | 'edit' | 'create'>('list');
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const scrollToTop = () => {
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollTo({ animated: false, y: 0 });
+    });
+  };
+  const logRecipeAndReturnToPlan = async (recipe: Recipe, mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => {
+    await onAddRecipeToLog(recipe, mealType);
+    setSelectedRecipe(null);
     setLogRoute('log');
+    onTabChange('Log');
+    scrollToTop();
+  };
+  const logMealAndReturnToPlan = async (mealType?: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack') => {
+    if (selectedRecipe && mealType) {
+      await logRecipeAndReturnToPlan(selectedRecipe, mealType);
+      return;
+    }
+    setSelectedRecipe(null);
+    setLogRoute('log');
+    onTabChange('Log');
+    scrollToTop();
+  };
+  const openRecipeDetail = (recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+    setRecipeRoute('detail');
+    scrollToTop();
   };
   const isAddSnack = activeTab === 'Log' && logRoute === 'addSnack';
   const isMainIngredients = activeTab === 'Log' && logRoute === 'mainIngredients';
   const isFoodNutritionDetail = activeTab === 'Log' && logRoute === 'foodNutritionDetail';
+  const isRecipeNutritionDetail = activeTab === 'Recipes' && recipeRoute === 'detail' && selectedRecipe !== null;
+  const isEditRecipe = activeTab === 'Recipes' && recipeRoute === 'edit' && selectedRecipe !== null;
+  const isCreateRecipe = activeTab === 'Recipes' && recipeRoute === 'create' && selectedRecipe !== null;
+  const isNutritionDetail = isFoodNutritionDetail || isRecipeNutritionDetail;
   const headerTitle =
     isMainIngredients
       ? 'Main Ingredients'
@@ -130,8 +193,19 @@ export function HomeScreen({ activeTab, onOpenSettings, onTabChange }: HomeScree
   return (
     <View style={styles.viewport}>
       <View style={styles.phone}>
-        {isFoodNutritionDetail ? (
-          <FoodNutritionHeader onBack={() => setLogRoute('addSnack')} />
+        {isNutritionDetail ? (
+          <FoodNutritionHeader
+            onBack={() => {
+              if (isRecipeNutritionDetail) {
+                setSelectedRecipe(null);
+                setRecipeRoute('list');
+                return;
+              }
+
+              setLogRoute('addSnack');
+            }}
+            title={isRecipeNutritionDetail ? 'Recipes: Nutrition Detail' : 'Food Nutrition Detail'}
+          />
         ) : (
           <Header
             onBack={isMainIngredients ? () => setLogRoute('addSnack') : isAddSnack ? () => setLogRoute('log') : undefined}
@@ -140,30 +214,138 @@ export function HomeScreen({ activeTab, onOpenSettings, onTabChange }: HomeScree
           />
         )}
         <ScrollView
-          contentContainerStyle={[styles.scrollContent, isFoodNutritionDetail && styles.detailScrollContent]}
+          contentContainerStyle={[styles.scrollContent, isNutritionDetail && styles.detailScrollContent]}
+          ref={scrollViewRef}
           showsVerticalScrollIndicator={false}
         >
-          {activeTab === 'Home' ? <HomeContent /> : null}
-          {activeTab === 'Log' && logRoute === 'log' ? <LogScreen onAddSnack={() => setLogRoute('addSnack')} /> : null}
+          {activeTab === 'Home' ? (
+            <HomeContent
+              goal={goal}
+              metrics={metrics}
+              onAddWater={onAddWater}
+              waterTargetLiters={waterTargetLiters}
+              onOpenRecipe={(recipe) => {
+                openRecipeDetail(recipe);
+                onTabChange('Recipes');
+              }}
+              recipes={recipes}
+            />
+          ) : null}
+          {activeTab === 'Log' && logRoute === 'log' ? (
+            <LogScreen
+              calorieGoal={metrics.calorieGoal}
+              dailyLog={dailyLog}
+              goal={goal}
+              mealPlans={mealPlans}
+              onAddSnack={() => setLogRoute('addSnack')}
+              onOpenRecipe={(recipe) => {
+                setSelectedRecipe(recipe);
+                setRecipeRoute('detail');
+                onTabChange('Recipes');
+                scrollToTop();
+              }}
+              onSelectDate={onSelectLogDate}
+              selectedDate={selectedLogDate}
+              waterTargetLiters={waterTargetLiters}
+            />
+          ) : null}
           {isAddSnack ? (
             <AddSnackScreen
               onLogMeal={logMealAndReturnToPlan}
-              onOpenDetail={() => setLogRoute('foodNutritionDetail')}
+              onOpenCreateRecipe={() => {
+                const now = new Date().toISOString();
+                setSelectedRecipe({
+                  id: `draft-${now}`,
+                  uid: null,
+                  recipeName: '',
+                  imageUrl: '',
+                  isDefault: false,
+                  createdAt: now,
+                  updatedAt: now,
+                  jsonData: {
+                    recipeName: '',
+                    mealType: 'snack',
+                    category: ['Snack'],
+                    cookTime: 0,
+                    serveTo: 1,
+                    calories: 0,
+                    proteins: 0,
+                    carbs: 0,
+                    fats: 0,
+                    description: '',
+                    ingredients: [],
+                    steps: [],
+                  },
+                });
+                setRecipeRoute('create');
+                onTabChange('Recipes');
+                scrollToTop();
+              }}
+              onOpenDetail={() => {
+                setSelectedRecipe(null);
+                setLogRoute('foodNutritionDetail');
+                scrollToTop();
+              }}
+              onQuickLogRecipe={async (recipe, mealType) => {
+                await logRecipeAndReturnToPlan(recipe, mealType);
+              }}
+              recentMealPlans={weeklyMealPlans}
             />
           ) : null}
           {isMainIngredients ? <MainIngredientsScreen /> : null}
           {isFoodNutritionDetail ? (
             <FoodNutritionDetail
               onAddToLog={logMealAndReturnToPlan}
-              onEditIngredients={() => setLogRoute('mainIngredients')}
+              recipe={selectedRecipe ?? undefined}
             />
           ) : null}
-          {activeTab === 'Recipes' ? <RecipesScreen /> : null}
-          {activeTab === 'Progress' ? <ProgressScreen /> : null}
+          {isRecipeNutritionDetail ? (
+            <FoodNutritionDetail
+              onAddToLog={logMealAndReturnToPlan}
+              onDeleteRecipe={async () => {
+                if (!selectedRecipe) return;
+                await onDeleteRecipe(selectedRecipe);
+                setSelectedRecipe(null);
+                setRecipeRoute('list');
+              }}
+              onEditRecipe={() => setRecipeRoute('edit')}
+              recipe={selectedRecipe}
+            />
+          ) : null}
+          {(isEditRecipe || isCreateRecipe) && selectedRecipe ? (
+            <EditRecipeScreen
+              mode={isCreateRecipe ? 'create' : 'edit'}
+              onCancel={() => setRecipeRoute(isCreateRecipe ? 'list' : 'detail')}
+              onSave={async (recipe) => {
+                const updatedRecipe = await onUpdateRecipe(recipe);
+                setSelectedRecipe(updatedRecipe);
+                setRecipeRoute('detail');
+              }}
+              recipe={selectedRecipe}
+            />
+          ) : null}
+          {activeTab === 'Recipes' && !isRecipeNutritionDetail && !isEditRecipe && !isCreateRecipe ? (
+            <RecipesScreen onOpenRecipe={openRecipeDetail} recipes={recipes} />
+          ) : null}
+          {activeTab === 'Progress' ? (
+            <ProgressScreen
+              calorieGoal={metrics.calorieGoal}
+              carbsGoal={metrics.carbsGoal}
+              fatsGoal={metrics.fatsGoal}
+              goal={goal}
+              profileWeight={profileWeight}
+              proteinGoal={metrics.proteinGoal}
+              onUpdateWaterTarget={onUpdateWaterTarget}
+              waterTargetLiters={waterTargetLiters}
+              weeklyLogs={weeklyLogs}
+            />
+          ) : null}
         </ScrollView>
         <BottomNavigation
           activeTab={activeTab}
           onTabChange={(tab) => {
+            setSelectedRecipe(null);
+            setRecipeRoute('list');
             if (tab !== 'Log') {
               setLogRoute('log');
             }
@@ -205,7 +387,33 @@ function Header({
   );
 }
 
-function HomeContent() {
+function HomeContent({
+  goal,
+  metrics,
+  onAddWater,
+  waterTargetLiters,
+  onOpenRecipe,
+  recipes,
+}: {
+  goal: HomeScreenProps['goal'];
+  metrics: HomeMetrics;
+  onAddWater: () => void | Promise<void>;
+  waterTargetLiters: number;
+  onOpenRecipe: (recipe: Recipe) => void;
+  recipes: Recipe[];
+}) {
+  const calorieGoal = Math.max(metrics.calorieGoal, 1);
+  const goalRangeMin = Math.round(calorieGoal * 0.8);
+  const goalRangeMax = Math.round(calorieGoal * 1.2);
+  const goalInstruction = getGoalInstruction(goal, calorieGoal, goalRangeMin, goalRangeMax);
+  const goalStatus = getGoalStatusInfo(goal, metrics.calories, calorieGoal, goalRangeMin, goalRangeMax);
+  const macroItems = [
+    { label: 'CALORIES', value: metrics.calories, target: calorieGoal, color: '#006C49', suffix: '' },
+    { label: 'PROTEIN', value: metrics.proteins, target: metrics.proteinGoal, color: '#3B82F6', suffix: 'g' },
+    { label: 'CARBS', value: metrics.carbs, target: metrics.carbsGoal, color: '#8B5CF6', suffix: 'g' },
+    { label: 'FATS', value: metrics.fats, target: metrics.fatsGoal, color: '#F59E0B', suffix: 'g' },
+  ];
+
   return (
     <>
       <View style={styles.hero}>
@@ -213,12 +421,24 @@ function HomeContent() {
           Fuel your <Text style={styles.heroAccent}>Potential.</Text>
         </Text>
         <Text style={styles.heroCopy}>
-          You've consumed 1,240 kcal today.{'\n'}Stay on track for your 2,450 kcal daily{'\n'}goal.
+          You've consumed {metrics.calories.toLocaleString()} kcal today.{'\n'}
+          {goalInstruction}
         </Text>
+      </View>
+      <View
+        style={[
+          styles.goalStatusCard,
+          { backgroundColor: goalStatus.backgroundColor, borderColor: goalStatus.borderColor },
+        ]}
+      >
+        <View style={[styles.goalStatusIconWrap, { backgroundColor: goalStatus.iconBackgroundColor }]}>
+          <Text style={[styles.goalStatusIcon, { color: goalStatus.color }]}>{goalStatus.icon}</Text>
+        </View>
+        <Text style={[styles.goalStatusText, { color: goalStatus.color }]}>{goalStatus.message}</Text>
       </View>
 
       <View style={styles.macroRow}>
-        {macros.map((macro) => (
+        {macroItems.map((macro) => (
           <View key={macro.label} style={styles.macroCard}>
             <Text style={styles.macroLabel}>{macro.label}</Text>
             <View style={styles.macroTrack}>
@@ -227,39 +447,186 @@ function HomeContent() {
                   styles.macroFill,
                   {
                     backgroundColor: macro.color,
-                    width: `${Math.min(macro.value / macro.target, 1) * 100}%`,
+                    width: `${Math.min(macro.value / Math.max(macro.target, 1), 1) * 100}%`,
                   },
                 ]}
               />
             </View>
             <Text style={styles.macroValue}>
               {macro.value}
-              {macro.label === 'CALORIES' ? '' : 'g'} /
+              {macro.suffix} /
             </Text>
             <Text style={styles.macroValue}>
               {macro.target}
-              {macro.label === 'CALORIES' ? '' : 'g'}
+              {macro.suffix}
             </Text>
           </View>
         ))}
       </View>
 
-      <CalorieRing />
-      <WaterTrackerCard />
-      <MealCard />
+      <CalorieRing goal={goal} summary={{ consumed: metrics.calories, goal: calorieGoal }} />
+      <WaterTrackerCard onAddWater={onAddWater} waterMl={metrics.waterMl} waterTargetLiters={waterTargetLiters} />
+      <HomeEditorsChoiceCard onPress={onOpenRecipe} recipes={recipes} />
       <InsightCard />
-      <WeeklyOverview />
+      <WeeklyOverview calorieGoal={calorieGoal} goal={goal} weeklyCalories={metrics.weeklyCalories} />
     </>
   );
 }
 
-function CalorieRing({ summary = calorieSummary }: { summary?: CalorieSummary }) {
+function HomeEditorsChoiceCard({ onPress, recipes }: { onPress: (recipe: Recipe) => void; recipes: Recipe[] }) {
+  const [featuredRecipeId, setFeaturedRecipeId] = useState<string | null>(null);
+  const defaultRecipes = useMemo(() => recipes.filter((recipe) => recipe.isDefault), [recipes]);
+  const featuredRecipe = useMemo(
+    () => defaultRecipes.find((recipe) => recipe.id === featuredRecipeId) ?? defaultRecipes[0] ?? null,
+    [defaultRecipes, featuredRecipeId],
+  );
+
+  useEffect(() => {
+    if (defaultRecipes.length === 0) {
+      setFeaturedRecipeId(null);
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * defaultRecipes.length);
+    setFeaturedRecipeId(defaultRecipes[randomIndex].id);
+  }, [defaultRecipes]);
+
+  if (!featuredRecipe) {
+    return null;
+  }
+
+  return (
+    <Pressable accessibilityRole="button" onPress={() => onPress(featuredRecipe)} style={styles.homeFeaturedCard}>
+      <Image source={{ uri: featuredRecipe.imageUrl }} style={styles.homeFeaturedImage} />
+      <View style={styles.homeFeaturedOverlay} />
+      <Text style={styles.homeFeaturedTag}>EDITOR'S CHOICE</Text>
+      <View style={styles.homeFeaturedContent}>
+        <Text style={styles.homeFeaturedTitle}>{featuredRecipe.jsonData.recipeName ?? featuredRecipe.recipeName}</Text>
+        <View style={styles.homeFeaturedMetaRow}>
+          <HomeFeaturedMeta icon={svgIcons.time} label={featuredRecipe.jsonData.cookTime ? `${featuredRecipe.jsonData.cookTime}m` : 'Any'} />
+          <HomeFeaturedMeta icon={svgIcons.calories} label={`${featuredRecipe.jsonData.calories ?? 0} kcal`} />
+          <HomeFeaturedMeta icon={svgIcons.proteinMetric} label={`${featuredRecipe.jsonData.proteins ?? 0}g Protein`} />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+function HomeFeaturedMeta({ icon, label }: { icon: string; label: string }) {
+  return (
+    <View style={styles.homeFeaturedMetaItem}>
+      <SvgIcon height={12} source={icon} width={12} />
+      <Text style={styles.homeFeaturedMeta}>{label}</Text>
+    </View>
+  );
+}
+
+function getGoalInstruction(goal: HomeScreenProps['goal'], calorieGoal: number, goalRangeMin: number, goalRangeMax: number) {
+  if (goal === 'gain_muscle') {
+    return `To complete Gain Muscle, keep calories >= ${calorieGoal.toLocaleString()} kcal/day.`;
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    return `To complete Healthy Lifestyle, keep calories around ±20% of target (${goalRangeMin.toLocaleString()} - ${goalRangeMax.toLocaleString()} kcal/day).`;
+  }
+
+  return `To complete Lose Weight, keep calories <= ${calorieGoal.toLocaleString()} kcal/day.`;
+}
+
+function getGoalStatusInfo(
+  goal: HomeScreenProps['goal'],
+  calories: number,
+  calorieGoal: number,
+  goalRangeMin: number,
+  goalRangeMax: number,
+) {
+  if (goal === 'gain_muscle') {
+    if (calories >= calorieGoal) {
+      return {
+        backgroundColor: '#ECFDF3',
+        borderColor: '#86EFAC',
+        color: '#166534',
+        iconBackgroundColor: '#D1FAE5',
+        icon: '✓',
+        message: 'You have completed your Gain Muscle goal for today.',
+      };
+    }
+
+    return {
+      backgroundColor: '#FFF7ED',
+      borderColor: '#FDBA74',
+      color: '#C2410C',
+      iconBackgroundColor: '#FFEDD5',
+      icon: '!',
+      message: 'Keep going, you are on the Gain Muscle journey. Add more calories to reach your goal faster.',
+    };
+  }
+
+  if (goal === 'healthy_lifestyle') {
+    if (calories < goalRangeMin) {
+      return {
+        backgroundColor: '#FFF7ED',
+        borderColor: '#FDBA74',
+        color: '#C2410C',
+        iconBackgroundColor: '#FFEDD5',
+        icon: '!',
+        message: 'Keep going, you are on the Healthy Lifestyle journey. Add more calories to reach your goal faster.',
+      };
+    }
+
+    if (calories > goalRangeMax) {
+      return {
+        backgroundColor: '#FEF2F2',
+        borderColor: '#FCA5A5',
+        color: '#B91C1C',
+        iconBackgroundColor: '#FEE2E2',
+        icon: '✕',
+        message: 'You did not complete your Healthy Lifestyle goal for today.',
+      };
+    }
+
+    return {
+      backgroundColor: '#ECFDF3',
+      borderColor: '#86EFAC',
+      color: '#166534',
+      iconBackgroundColor: '#D1FAE5',
+      icon: '✓',
+      message: 'You have completed your Healthy Lifestyle goal for today.',
+    };
+  }
+
+  if (calories <= calorieGoal) {
+    return {
+      backgroundColor: '#ECFDF3',
+      borderColor: '#86EFAC',
+      color: '#166534',
+      iconBackgroundColor: '#D1FAE5',
+      icon: '✓',
+      message: 'You are maintaining your Lose Weight journey very well. Keep eating wisely to maintain your weight.',
+    };
+  }
+
+  return {
+    backgroundColor: '#FEF2F2',
+    borderColor: '#FCA5A5',
+    color: '#B91C1C',
+    iconBackgroundColor: '#FEE2E2',
+    icon: '✕',
+    message: 'You did not complete your Lose Weight goal for today.',
+  };
+}
+
+function CalorieRing({ goal, summary }: { goal: HomeScreenProps['goal']; summary: CalorieSummary }) {
   const size = 270;
   const strokeWidth = 24;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const { left, leftPercent, leftProgress } = getCalorieRingMetrics(summary);
-  const strokeDashoffset = circumference * (1 - leftProgress);
+  const { consumed, consumedPercent, ringProgress } = getCalorieRingMetrics(summary);
+  const strokeDashoffset = circumference * (1 - ringProgress);
+  const isOverLimit =
+    (goal === 'lose_weight' && consumed > summary.goal) ||
+    (goal === 'healthy_lifestyle' && consumed > summary.goal * 1.2);
+  const activeColor = isOverLimit ? '#DC2626' : colors.primaryMid;
 
   return (
     <View style={styles.ringWrap}>
@@ -280,7 +647,7 @@ function CalorieRing({ summary = calorieSummary }: { summary?: CalorieSummary })
           originY={size / 2}
           r={radius}
           rotation="-90"
-          stroke={colors.primaryMid}
+          stroke={activeColor}
           strokeDasharray={`${circumference} ${circumference}`}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
@@ -288,15 +655,27 @@ function CalorieRing({ summary = calorieSummary }: { summary?: CalorieSummary })
         />
       </Svg>
       <View style={styles.ringCenter}>
-        <Text style={styles.ringNumber}>{left.toLocaleString()}</Text>
-        <Text style={styles.ringLabel}>KCAL LEFT</Text>
-        <Text style={styles.ringPercent}>{leftPercent}% left</Text>
+        <Text style={styles.ringNumber}>{consumed.toLocaleString()}</Text>
+        <Text style={styles.ringLabel}>KCAL EATEN</Text>
+        <Text style={[styles.ringPercent, isOverLimit && styles.ringPercentOver]}>{consumedPercent}% consumed</Text>
       </View>
     </View>
   );
 }
 
-function WaterTrackerCard() {
+function WaterTrackerCard({
+  onAddWater,
+  waterMl,
+  waterTargetLiters,
+}: {
+  onAddWater: () => void | Promise<void>;
+  waterMl: number;
+  waterTargetLiters: number;
+}) {
+  const waterConsumedLiters = waterMl / 1000;
+  const isGoalReached = waterMl >= waterTargetLiters * 1000;
+  const waterCups = Array.from({ length: Math.max(1, Math.round(waterTargetLiters / waterCupLiters)) }, (_, index) => index);
+
   return (
     <View style={styles.waterCard}>
       <View style={styles.cardHeader}>
@@ -318,9 +697,15 @@ function WaterTrackerCard() {
       </View>
       <View style={styles.waterFooter}>
         <Text style={styles.waterAmount}>
-          {waterConsumedLiters.toFixed(1)}L / {waterGoalLiters.toFixed(1)}L
+          {waterConsumedLiters.toFixed(1)}L / {waterTargetLiters.toFixed(1)}L
         </Text>
-        <Pressable accessibilityLabel="Add water" style={styles.addWaterButton}>
+        <Pressable
+          accessibilityLabel="Add 0.5 liters of water"
+          accessibilityState={{ disabled: isGoalReached }}
+          disabled={isGoalReached}
+          onPress={onAddWater}
+          style={[styles.addWaterButton, isGoalReached && styles.addWaterButtonDisabled]}
+        >
           <Text style={styles.addWaterText}>+</Text>
         </Pressable>
       </View>
@@ -332,29 +717,6 @@ function WaterCup({ fillLevel }: { fillLevel: number }) {
   return (
     <View style={styles.cup}>
       <View style={[styles.cupFill, { height: `${fillLevel * 100}%` }]} />
-    </View>
-  );
-}
-
-function MealCard() {
-  return (
-    <View style={styles.mealCard}>
-      <ImageBackground source={lunchImage} resizeMode="cover" style={styles.mealImage}>
-        <View style={styles.mealShade} />
-        <Text style={styles.mealType}>Lunch</Text>
-      </ImageBackground>
-      <View style={styles.mealBody}>
-        <View style={styles.mealTitleRow}>
-          <Text numberOfLines={1} style={styles.mealTitle}>
-            Grilled Chicken Salad
-          </Text>
-          <Text style={styles.mealCalories}>420 kcal</Text>
-        </View>
-        <View style={styles.nutritionRow}>
-          <Text style={[styles.nutritionPill, { color: nutritionColors.PROTEIN }]}>P: 35G</Text>
-          <Text style={[styles.nutritionPill, { color: nutritionColors.FAT }]}>F: 18G</Text>
-        </View>
-      </View>
     </View>
   );
 }
@@ -381,7 +743,18 @@ function InsightCard() {
   );
 }
 
-function WeeklyOverview() {
+function WeeklyOverview({
+  calorieGoal,
+  goal,
+  weeklyCalories,
+}: {
+  calorieGoal: number;
+  goal: HomeScreenProps['goal'];
+  weeklyCalories: HomeMetrics['weeklyCalories'];
+}) {
+  const maxWeeklyCalories = Math.max(calorieGoal, 1);
+  const chartHeight = 132;
+
   return (
     <View style={styles.weeklyCard}>
       <View style={styles.weeklyHeader}>
@@ -390,16 +763,21 @@ function WeeklyOverview() {
       </View>
       <View style={styles.weeklyChart}>
         {weeklyCalories.map((item) => {
-          const isActive = item.day === 'WED';
-          const barHeight = Math.max(34, (item.calories / maxWeeklyCalories) * 128);
+          const barHeight = item.calories === 0 ? 0 : Math.max(8, (item.calories / maxWeeklyCalories) * chartHeight);
+          const isOverLimit =
+            item.isToday &&
+            ((goal === 'lose_weight' && item.calories > calorieGoal) ||
+              (goal === 'healthy_lifestyle' && item.calories > calorieGoal * 1.2));
 
           return (
             <View key={item.day} style={styles.weekColumn}>
-              <Text style={[styles.weekValue, isActive && styles.weekValueActive]}>{item.calories}</Text>
+              <Text style={[styles.weekValue, item.isToday && styles.weekValueActive]}>{item.calories}</Text>
               <View style={styles.weekBarTrack}>
-                <View style={[styles.weekBar, isActive && styles.weekBarActive, { height: barHeight }]} />
+                {barHeight > 0 ? (
+                  <View style={[styles.weekBar, item.isToday && styles.weekBarActive, isOverLimit && styles.weekBarOver, { height: barHeight }]} />
+                ) : null}
               </View>
-              <Text style={[styles.weekDay, isActive && styles.weekDayActive]}>{item.day}</Text>
+              <Text style={[styles.weekDay, item.isToday && styles.weekDayActive, isOverLimit && styles.weekDayOver]}>{item.day}</Text>
             </View>
           );
         })}
@@ -408,7 +786,7 @@ function WeeklyOverview() {
   );
 }
 
-function BottomNavigation({ activeTab, onTabChange }: HomeScreenProps) {
+function BottomNavigation({ activeTab, onTabChange }: Pick<HomeScreenProps, 'activeTab' | 'onTabChange'>) {
   return (
     <View style={styles.navShell}>
       {tabs.map((tab) => {
@@ -507,6 +885,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 14,
     width: 42,
+  },
+  addWaterButtonDisabled: {
+    backgroundColor: colors.inkSoft,
+    shadowOpacity: 0,
   },
   addWaterText: {
     color: colors.surface,
@@ -861,6 +1243,35 @@ const styles = StyleSheet.create({
     marginTop: 12,
     textAlign: 'center',
   },
+  goalStatusCard: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  goalStatusIconWrap: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  goalStatusIcon: {
+    ...font.bold,
+    fontSize: 14,
+    lineHeight: 16,
+    textAlign: 'center',
+  },
+  goalStatusText: {
+    ...font.medium,
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+  },
   heroTitle: {
     color: colors.ink,
     ...font.manropeExtraBold,
@@ -931,7 +1342,7 @@ const styles = StyleSheet.create({
     height: 123,
     justifyContent: 'center',
     paddingHorizontal: spacing.sm,
-    width: 112,
+    width: 82,
   },
   macroFill: {
     borderRadius: 999,
@@ -940,13 +1351,13 @@ const styles = StyleSheet.create({
   macroLabel: {
     color: colors.inkMuted,
     ...font.semiBold,
-    fontSize: 12,
+    fontSize: 10,
     letterSpacing: 1,
     marginBottom: spacing.sm,
   },
   macroRow: {
     flexDirection: 'row',
-    gap: 18,
+    gap: 8,
     justifyContent: 'center',
     marginTop: 40,
   },
@@ -956,13 +1367,68 @@ const styles = StyleSheet.create({
     height: 8,
     marginBottom: spacing.md,
     overflow: 'hidden',
-    width: 70,
+    width: 54,
   },
   macroValue: {
     color: colors.ink,
     ...font.bold,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  homeFeaturedCard: {
+    borderRadius: 12,
+    height: 420,
+    justifyContent: 'space-between',
+    marginTop: 36,
+    overflow: 'hidden',
+    padding: 18,
+  },
+  homeFeaturedContent: {
+    zIndex: 1,
+  },
+  homeFeaturedImage: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 12,
+    resizeMode: 'cover',
+  },
+  homeFeaturedMeta: {
+    color: colors.surface,
+    ...font.semiBold,
+    fontSize: 12,
+  },
+  homeFeaturedMetaItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  homeFeaturedMetaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 18,
+    marginTop: 16,
+  },
+  homeFeaturedOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(13,18,27,0.28)',
+  },
+  homeFeaturedTag: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+    color: colors.surface,
+    ...font.bold,
+    fontSize: 10,
+    overflow: 'hidden',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    zIndex: 1,
+  },
+  homeFeaturedTitle: {
+    color: colors.surface,
+    ...font.manropeExtraBold,
+    fontSize: 30,
+    lineHeight: 38,
   },
   mealBody: {
     paddingHorizontal: 22,
@@ -1172,6 +1638,9 @@ const styles = StyleSheet.create({
     ...font.black,
     fontSize: 13,
     marginTop: spacing.sm,
+  },
+  ringPercentOver: {
+    color: '#DC2626',
   },
   ringSvg: {
     position: 'absolute',
@@ -1437,6 +1906,9 @@ const styles = StyleSheet.create({
   weekDayActive: {
     color: colors.primary,
   },
+  weekDayOver: {
+    color: '#DC2626',
+  },
   weekBar: {
     backgroundColor: '#C8D1E5',
     borderRadius: 999,
@@ -1447,6 +1919,9 @@ const styles = StyleSheet.create({
   weekBarActive: {
     backgroundColor: colors.primaryMid,
     width: 22,
+  },
+  weekBarOver: {
+    backgroundColor: '#DC2626',
   },
   weekBarTrack: {
     alignItems: 'center',

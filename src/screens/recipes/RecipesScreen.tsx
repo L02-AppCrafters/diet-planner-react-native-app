@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import { Image, ImageBackground, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { SvgXml } from 'react-native-svg';
 import { svgIcons } from '../../assets/icons';
 import { SvgIcon } from '../../components/ui/SvgIcon';
-import { aiDiscovery, featuredRecipe, recipeCards, recipeFilters } from '../../data/recipes';
+import { aiDiscovery } from '../../data/recipes';
+import { Recipe } from '../../services/api';
 import { colors } from '../../theme/colors';
 import { spacing } from '../../theme/spacing';
 import { fontFamily } from '../../theme/typography';
+
+const recipeFilters = ['All Recipes', 'My Recipes', 'Breakfast', 'Lunch', 'Dinner', 'Snack'];
 
 const font = {
   regular: { fontFamily: fontFamily.regular, fontWeight: undefined },
@@ -16,19 +20,57 @@ const font = {
   manropeExtraBold: { fontFamily: fontFamily.manropeExtraBold, fontWeight: undefined },
 } as const;
 
-type RecipeCardProps = {
-  calories: string;
-  id: string;
-  image: number;
-  protein: string;
-  tag: string;
-  time: string;
-  title: string;
+type RecipesScreenProps = {
+  onOpenRecipe?: (recipe: Recipe) => void;
+  recipes: Recipe[];
 };
 
-export function RecipesScreen() {
+type RecipeCardProps = {
+  onPress?: () => void;
+  recipe: Recipe;
+};
+
+export function RecipesScreen({ onOpenRecipe, recipes }: RecipesScreenProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState(recipeFilters[0]);
+  const [featuredRecipeId, setFeaturedRecipeId] = useState<string | null>(null);
+
+  const defaultRecipes = useMemo(() => recipes.filter((recipe) => recipe.isDefault), [recipes]);
+  const featuredRecipe = useMemo(
+    () => defaultRecipes.find((recipe) => recipe.id === featuredRecipeId) ?? defaultRecipes[0] ?? recipes[0],
+    [defaultRecipes, featuredRecipeId, recipes],
+  );
+  const visibleRecipes = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+    const activeMealType =
+      activeFilter === 'All Recipes' || activeFilter === 'My Recipes' ? null : activeFilter.toLowerCase();
+
+    return recipes.filter((recipe) => {
+      const title = getRecipeTitle(recipe).toLowerCase();
+      const description = recipe.jsonData.description?.toLowerCase() ?? '';
+      const categories = recipe.jsonData.category?.join(' ').toLowerCase() ?? '';
+      const mealType = recipe.jsonData.mealType?.toLowerCase();
+      const matchesSearch =
+        !normalizedSearch ||
+        title.includes(normalizedSearch) ||
+        description.includes(normalizedSearch) ||
+        categories.includes(normalizedSearch);
+      const matchesMealFilter = !activeMealType || mealType === activeMealType;
+      const matchesOwnership = activeFilter !== 'My Recipes' || (!recipe.isDefault && !!recipe.uid);
+
+      return matchesSearch && matchesMealFilter && matchesOwnership;
+    });
+  }, [activeFilter, recipes, searchQuery]);
+
+  useEffect(() => {
+    if (defaultRecipes.length === 0) {
+      setFeaturedRecipeId(null);
+      return;
+    }
+
+    const randomIndex = Math.floor(Math.random() * defaultRecipes.length);
+    setFeaturedRecipeId(defaultRecipes[randomIndex].id);
+  }, [defaultRecipes]);
 
   return (
     <View style={styles.container}>
@@ -65,30 +107,37 @@ export function RecipesScreen() {
         ))}
       </ScrollView>
 
-      <FeaturedRecipe />
-      <RecipeCard {...recipeCards[0]} />
-      <AiDiscoveryCard />
-      {recipeCards.slice(1).map((recipe) => (
-        <RecipeCard key={recipe.id} {...recipe} />
-      ))}
+      {featuredRecipe ? <FeaturedRecipe onPress={() => onOpenRecipe?.(featuredRecipe)} recipe={featuredRecipe} /> : <EmptyRecipeState />}
+
+      {visibleRecipes.length > 0 ? (
+        visibleRecipes.map((recipe, index) => (
+          <View key={recipe.id}>
+            {index === 1 ? <AiDiscoveryCard /> : null}
+            <RecipeCard onPress={() => onOpenRecipe?.(recipe)} recipe={recipe} />
+          </View>
+        ))
+      ) : (
+        <EmptyRecipeState />
+      )}
     </View>
   );
 }
 
-function FeaturedRecipe() {
+function FeaturedRecipe({ onPress, recipe }: RecipeCardProps) {
   return (
-    <ImageBackground imageStyle={styles.featuredImage} source={featuredRecipe.image} style={styles.featuredCard}>
+    <Pressable accessibilityRole="button" onPress={onPress} style={styles.featuredCard}>
+      <RecipeImage imageUrl={recipe.imageUrl} imageStyle={styles.featuredImage} />
       <View style={styles.featuredOverlay} />
-      <Text style={styles.featuredTag}>{featuredRecipe.tag}</Text>
+      <Text style={styles.featuredTag}>EDITOR'S CHOICE</Text>
       <View style={styles.featuredContent}>
-        <Text style={styles.featuredTitle}>{featuredRecipe.title}</Text>
+        <Text style={styles.featuredTitle}>{getRecipeTitle(recipe)}</Text>
         <View style={styles.featuredMetaRow}>
-          <FeaturedMeta icon={svgIcons.time} label={featuredRecipe.time} />
-          <FeaturedMeta icon={svgIcons.calories} label={featuredRecipe.calories} />
-          <FeaturedMeta icon={svgIcons.proteinMetric} label={featuredRecipe.protein} />
+          <FeaturedMeta icon={svgIcons.time} label={formatCookTime(recipe)} />
+          <FeaturedMeta icon={svgIcons.calories} label={`${recipe.jsonData.calories ?? 0} kcal`} />
+          <FeaturedMeta icon={svgIcons.proteinMetric} label={`${recipe.jsonData.proteins ?? 0}g Protein`} />
         </View>
       </View>
-    </ImageBackground>
+    </Pressable>
   );
 }
 
@@ -101,29 +150,51 @@ function FeaturedMeta({ icon, label }: { icon: string; label: string }) {
   );
 }
 
-function RecipeCard({ calories, image, protein, tag, time, title }: RecipeCardProps) {
+function RecipeCard({ onPress, recipe }: RecipeCardProps) {
+  const mealType = recipe.jsonData.mealType ?? 'Recipe';
+
   return (
-    <View style={styles.recipeCard}>
-      <Image source={image} style={styles.recipeImage} />
+    <Pressable accessibilityRole="button" onPress={onPress} style={styles.recipeCard}>
+      <RecipeImage imageUrl={recipe.imageUrl} imageStyle={styles.recipeImage} />
       <View style={styles.recipeBody}>
-        <Text style={[styles.recipeTag, tag === 'KETO' && styles.ketoTag]}>{tag}</Text>
-        <Text style={styles.recipeTitle}>{title}</Text>
+        <Text style={styles.recipeTag}>{mealType}</Text>
+        <Text style={styles.recipeTitle}>{getRecipeTitle(recipe)}</Text>
+        <Text numberOfLines={2} style={styles.recipeDescription}>
+          {recipe.jsonData.description}
+        </Text>
         <View style={styles.recipeDivider} />
         <View style={styles.recipeMetaRow}>
-          <RecipeMetric label="TIME" value={time} />
-          <RecipeMetric label="CALORIES" value={calories} />
-          <RecipeMetric label="PROTEIN" value={protein} />
+          <RecipeMetric icon={svgIcons.time} label="TIME" value={formatCookTime(recipe)} />
+          <RecipeMetric icon={svgIcons.calories} label="CALORIES" value={`${recipe.jsonData.calories ?? 0} kcal`} />
+          <RecipeMetric icon={svgIcons.proteinMetric} label="PROTEIN" value={`${recipe.jsonData.proteins ?? 0}g`} />
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
-function RecipeMetric({ label, value }: { label: string; value: string }) {
+function RecipeImage({ imageStyle, imageUrl }: { imageStyle: object; imageUrl: string }) {
+  const svg = getSvgFromDataUri(imageUrl);
+
+  if (svg) {
+    return (
+      <View style={imageStyle}>
+        <SvgXml height="100%" width="100%" xml={svg} />
+      </View>
+    );
+  }
+
+  return <Image source={{ uri: imageUrl }} style={imageStyle} />;
+}
+
+function RecipeMetric({ icon, label, value }: { icon: string; label: string; value: string }) {
   return (
     <View style={styles.recipeMetric}>
       <Text style={styles.recipeMetaLabel}>{label}</Text>
-      <Text style={styles.recipeMetaValue}>{value}</Text>
+      <View style={styles.recipeMetaValueRow}>
+        <SvgIcon color={colors.ink} height={12} source={icon} width={12} />
+        <Text style={styles.recipeMetaValue}>{value}</Text>
+      </View>
     </View>
   );
 }
@@ -150,6 +221,37 @@ function AiDiscoveryCard() {
       </View>
     </View>
   );
+}
+
+function EmptyRecipeState() {
+  return (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyTitle}>No recipes found</Text>
+      <Text style={styles.emptyCopy}>Try another search term or refresh after seeding default recipes.</Text>
+    </View>
+  );
+}
+
+function getRecipeTitle(recipe: Recipe) {
+  return recipe.jsonData.recipeName ?? recipe.recipeName;
+}
+
+function formatCookTime(recipe: Recipe) {
+  const cookTime = recipe.jsonData.cookTime;
+  return cookTime ? `${cookTime}m` : 'Any';
+}
+
+function getSvgFromDataUri(uri: string) {
+  if (!uri.startsWith('data:image/svg+xml')) {
+    return null;
+  }
+
+  const [, payload] = uri.split(',', 2);
+  if (!payload) {
+    return null;
+  }
+
+  return decodeURIComponent(payload);
 }
 
 const styles = StyleSheet.create({
@@ -225,6 +327,26 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     overflow: 'hidden',
   },
+  emptyCopy: {
+    color: colors.inkMuted,
+    ...font.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    marginTop: 24,
+    padding: 24,
+  },
+  emptyTitle: {
+    color: colors.ink,
+    ...font.manropeBold,
+    fontSize: 18,
+  },
   featuredCard: {
     borderRadius: 12,
     height: 420,
@@ -237,6 +359,7 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   featuredImage: {
+    ...StyleSheet.absoluteFillObject,
     borderRadius: 12,
     resizeMode: 'cover',
   },
@@ -253,12 +376,13 @@ const styles = StyleSheet.create({
   featuredMetaRow: {
     alignItems: 'center',
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 18,
     marginTop: 16,
   },
   featuredOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(13,18,27,0.26)',
+    backgroundColor: 'rgba(13,18,27,0.28)',
   },
   featuredTag: {
     alignSelf: 'flex-start',
@@ -304,9 +428,6 @@ const styles = StyleSheet.create({
     color: colors.surface,
     ...font.semiBold,
   },
-  ketoTag: {
-    color: '#2563EB',
-  },
   pageTitle: {
     color: colors.ink,
     ...font.manropeExtraBold,
@@ -325,6 +446,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 24,
     overflow: 'hidden',
+  },
+  recipeDescription: {
+    color: colors.inkMuted,
+    ...font.regular,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: spacing.sm,
   },
   recipeDivider: {
     backgroundColor: '#EEF2F1',
@@ -351,6 +479,11 @@ const styles = StyleSheet.create({
     color: colors.ink,
     ...font.semiBold,
     fontSize: 14,
+  },
+  recipeMetaValueRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 5,
     marginTop: spacing.xs,
   },
   recipeMetric: {

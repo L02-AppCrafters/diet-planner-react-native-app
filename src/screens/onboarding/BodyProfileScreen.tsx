@@ -27,6 +27,7 @@ const headerTopInset = Math.min(androidStatusBarHeight, 10);
 // Component Màn Hình Chính BodyProfileScreen
 // -------------------------------------------------------------
 type BodyProfileScreenProps = {
+  canEditBodyMetrics?: boolean;
   initialProfile: {
     goal: string;
     height: number;
@@ -34,14 +35,21 @@ type BodyProfileScreenProps = {
     age: number;
     activityLevel: string;
   };
+  onBack?: () => void;
+  onLogout?: () => void;
   onUpdateProfile: (profile: any) => void;
 };
 
-export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfileScreenProps) {
-  // Ban đầu đặt các thông số ở dạng null (chưa chọn) để đảm bảo "nhập đủ mới hiện"
-  const [height, setHeight] = useState<number | null>(null);
-  const [weight, setWeight] = useState<number | null>(null);
-  const [age, setAge] = useState<number | null>(null);
+export function BodyProfileScreen({
+  canEditBodyMetrics = true,
+  initialProfile,
+  onBack,
+  onLogout,
+  onUpdateProfile,
+}: BodyProfileScreenProps) {
+  const [height, setHeight] = useState<number | null>(initialProfile.height ?? null);
+  const [weight, setWeight] = useState<number | null>(initialProfile.weight ?? null);
+  const [age, setAge] = useState<number | null>(initialProfile.age ?? null);
   const [activityLevel, setActivityLevel] = useState<string>(initialProfile.activityLevel);
 
   // Trạng thái mở Modal: 'height' | 'weight' | 'age' | null
@@ -56,6 +64,13 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
 
   // Kiểm tra xem đã điền đầy đủ cả 3 thông số chưa
   const isAllFilled = height !== null && weight !== null && age !== null;
+
+  useEffect(() => {
+    setHeight(initialProfile.height ?? null);
+    setWeight(initialProfile.weight ?? null);
+    setAge(initialProfile.age ?? null);
+    setActivityLevel(initialProfile.activityLevel);
+  }, [initialProfile.activityLevel, initialProfile.age, initialProfile.height, initialProfile.weight]);
 
   // Thực hiện tính toán chỉ số khi điền đủ
   useEffect(() => {
@@ -96,7 +111,7 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
   };
 
   const handleUpdate = () => {
-    if (!isAllFilled) return;
+    if (!isAllFilled || !canEditBodyMetrics) return;
 
     onUpdateProfile({
       goal: initialProfile.goal,
@@ -109,7 +124,10 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
   };
 
   const openNumberModal = (field: 'height' | 'weight' | 'age') => {
-    setModalInputValue('');
+    if (!canEditBodyMetrics) return;
+    const currentValue = field === 'height' ? height : field === 'weight' ? weight : age;
+
+    setModalInputValue(currentValue === null ? '' : String(currentValue));
     setModalInputError('');
     setActiveModal(field);
   };
@@ -240,36 +258,51 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
         </View>
 
         {/* Các Trường Input Bấm Cao Cấp */}
+        {onLogout ? (
+          <View style={styles.bodyProfileInfoCard}>
+            <View style={styles.bodyProfileInfoIconWrap}>
+              <Text style={styles.bodyProfileInfoIcon}>i</Text>
+            </View>
+            <Text style={styles.bodyProfileInfoText}>
+              You can only update your Body Profile before logging any recipe today. Updating your profile changes BMI and
+              TDEE, and affects your daily goals.
+            </Text>
+          </View>
+        ) : null}
+
         <View style={styles.profileCard}>
           {/* Ô HEIGHT */}
           <Pressable
-            style={styles.fieldInput}
+            style={[styles.fieldInput, !canEditBodyMetrics && styles.fieldInputLocked]}
             onPress={() => openNumberModal('height')}
+            disabled={!canEditBodyMetrics}
           >
             <Text style={styles.fieldLabel}>HEIGHT (CM)</Text>
-            <Text style={[styles.fieldValue, !height && styles.fieldValueEmpty]}>
+            <Text style={[styles.fieldValue, !height && styles.fieldValueEmpty, !canEditBodyMetrics && styles.fieldValueLocked]}>
               {height ? `${height}` : '--'}
             </Text>
           </Pressable>
 
           {/* Ô WEIGHT */}
           <Pressable
-            style={styles.fieldInput}
+            style={[styles.fieldInput, !canEditBodyMetrics && styles.fieldInputLocked]}
             onPress={() => openNumberModal('weight')}
+            disabled={!canEditBodyMetrics}
           >
             <Text style={styles.fieldLabel}>WEIGHT (KG)</Text>
-            <Text style={[styles.fieldValue, !weight && styles.fieldValueEmpty]}>
+            <Text style={[styles.fieldValue, !weight && styles.fieldValueEmpty, !canEditBodyMetrics && styles.fieldValueLocked]}>
               {weight ? `${weight}` : '--'}
             </Text>
           </Pressable>
 
           {/* Ô BIRTH YEAR */}
           <Pressable
-            style={styles.fieldInput}
+            style={[styles.fieldInput, !canEditBodyMetrics && styles.fieldInputLocked]}
             onPress={() => openNumberModal('age')}
+            disabled={!canEditBodyMetrics}
           >
             <Text style={styles.fieldLabel}>AGE</Text>
-            <Text style={[styles.fieldValue, !age && styles.fieldValueEmpty]}>
+            <Text style={[styles.fieldValue, !age && styles.fieldValueEmpty, !canEditBodyMetrics && styles.fieldValueLocked]}>
               {age ? `${age}` : '--'}
             </Text>
           </Pressable>
@@ -306,14 +339,6 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
             </View>
           </View>
         </View>
-
-        <Pressable
-          style={[styles.btnUpdate, !isAllFilled && styles.btnUpdateDisabled]}
-          onPress={handleUpdate}
-          disabled={!isAllFilled}
-        >
-          <Text style={styles.btnUpdateText}>Update Profile Data</Text>
-        </Pressable>
 
         {/* CHỈ HIỂN THỊ BMI và TDEE KHI ĐÃ NHẬP ĐỦ */}
         {isAllFilled ? (
@@ -377,7 +402,27 @@ export function BodyProfileScreen({ initialProfile, onUpdateProfile }: BodyProfi
             <Text style={styles.bannerHeading}>Precision is the foundation of progress.</Text>
           </View>
         </ImageBackground>
+
+        {onLogout ? (
+          <Pressable accessibilityRole="button" onPress={onLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </Pressable>
+        ) : null}
       </ScrollView>
+
+      <View style={styles.footerNav}>
+        <Pressable accessibilityRole="button" onPress={onBack} style={styles.footerBackButton}>
+          <Text style={styles.footerBackText}>Back</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          style={[styles.footerUpdateButton, (!isAllFilled || !canEditBodyMetrics) && styles.btnUpdateDisabled]}
+          onPress={handleUpdate}
+          disabled={!isAllFilled || !canEditBodyMetrics}
+        >
+          <Text style={styles.footerUpdateText}>Update Profile</Text>
+        </Pressable>
+      </View>
 
       {/* ------------------------------------------------------------- */}
       {/* Modal Box chứa numeric input (Bottom Sheet Style) */}
@@ -478,7 +523,7 @@ const styles = StyleSheet.create({
     padding: spacing.xs,
   },
   scrollContent: {
-    paddingBottom: 72,
+    paddingBottom: 132,
     paddingHorizontal: 25,
     paddingTop: 34,
   },
@@ -498,6 +543,39 @@ const styles = StyleSheet.create({
     lineHeight: 31,
     marginTop: 18,
   },
+  bodyProfileInfoCard: {
+    alignItems: 'center',
+    backgroundColor: '#ECFDF3',
+    borderColor: '#86EFAC',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.lg,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  bodyProfileInfoIconWrap: {
+    alignItems: 'center',
+    backgroundColor: '#D1FAE5',
+    borderRadius: 999,
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
+  bodyProfileInfoIcon: {
+    color: '#166534',
+    fontFamily: fontFamily.bold,
+    fontSize: 14,
+    lineHeight: 16,
+  },
+  bodyProfileInfoText: {
+    color: '#166534',
+    flex: 1,
+    fontFamily: fontFamily.medium,
+    fontSize: 15,
+    lineHeight: 22,
+  },
   profileCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 24,
@@ -515,6 +593,9 @@ const styles = StyleSheet.create({
   },
   fieldInput: {
     marginBottom: 34,
+  },
+  fieldInputLocked: {
+    opacity: 0.6,
   },
   fieldLabel: {
     color: colors.inkMuted,
@@ -537,6 +618,9 @@ const styles = StyleSheet.create({
   fieldValueEmpty: {
     color: '#94A3B8',
     fontFamily: fontFamily.medium,
+  },
+  fieldValueLocked: {
+    color: '#94A3B8',
   },
   activityGroup: {
     marginTop: 0,
@@ -572,28 +656,51 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontFamily: fontFamily.bold,
   },
-  btnUpdate: {
-    backgroundColor: colors.primaryMid,
-    borderRadius: 24,
-    height: 72,
-    justifyContent: 'center',
+  btnUpdateDisabled: {
+    backgroundColor: '#CBD5E1',
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  footerNav: {
     alignItems: 'center',
-    marginBottom: 34,
+    backgroundColor: '#FFFFFF',
+    borderTopColor: '#E2E8F0',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: spacing.md,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+  },
+  footerBackButton: {
+    alignItems: 'center',
+    backgroundColor: '#EEF2FF',
+    borderRadius: 16,
+    height: 52,
+    justifyContent: 'center',
+    width: 96,
+  },
+  footerBackText: {
+    color: colors.ink,
+    fontFamily: fontFamily.bold,
+    fontSize: 15,
+  },
+  footerUpdateButton: {
+    alignItems: 'center',
+    backgroundColor: colors.primaryMid,
+    borderRadius: 16,
+    flex: 1,
+    height: 52,
+    justifyContent: 'center',
     shadowColor: colors.primaryMid,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.15,
     shadowRadius: 10,
     elevation: 3,
   },
-  btnUpdateDisabled: {
-    backgroundColor: '#CBD5E1',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  btnUpdateText: {
+  footerUpdateText: {
     color: '#FFFFFF',
     fontFamily: fontFamily.bold,
-    fontSize: 21,
+    fontSize: 17,
   },
   resultsContainer: {
     marginBottom: 2,
@@ -776,6 +883,21 @@ const styles = StyleSheet.create({
     lineHeight: 29,
     width: '80%',
   },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: '#FEE2E2',
+    borderColor: '#FECACA',
+    borderRadius: 18,
+    borderWidth: 1,
+    height: 58,
+    justifyContent: 'center',
+    marginTop: 28,
+  },
+  logoutText: {
+    color: '#B91C1C',
+    fontFamily: fontFamily.bold,
+    fontSize: 16,
+  },
 
   // -------------------------------------------------------------
   // Styles của Modal & Picker
@@ -869,3 +991,5 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
 });
+
+
